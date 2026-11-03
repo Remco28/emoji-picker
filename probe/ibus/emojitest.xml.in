@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component>
+  <name>org.freedesktop.IBus.EmojiTest</name>
+  <description>Passive engine for the emoji-picker probe</description>
+  <exec>@EXEC@ --ibus</exec>
+  <version>0.1</version>
+  <author>emoji-picker probe</author>
+  <license>MIT</license>
+  <homepage>https://github.com</homepage>
+  <textdomain>emojitest</textdomain>
+  <engines>
+    <engine>
+      <name>emojitest</name>
+      <language>other</language>
+      <license>MIT</license>
+      <author>emoji-picker probe</author>
+      <icon>input-keyboard</icon>
+      <layout>us</layout>
+      <longname>Emoji Probe (passive)</longname>
+      <description>Passes keys through; commits emoji on request</description>
+      <rank>0</rank>
+    </engine>
+  </engines>
+</component>

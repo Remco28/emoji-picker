@@ -1,0 +1,8 @@
+# Local agent-office symlinks point at this machine's absolute paths
+.agents/
+.claude/
+
+# Probe output stays local until the human chooses to share it
+emoji-probe-report*.txt
+__pycache__/
+*.pyc
