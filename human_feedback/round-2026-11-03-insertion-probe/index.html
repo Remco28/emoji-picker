@@ -123,7 +123,7 @@ const CONFIG = {
   roundId: "round-2026-11-03-insertion-probe",
   title: "Can we put an emoji into your apps cleanly? (Wayland + GNOME)",
   testUrl: "",
-  testedCommit: "TESTED_COMMIT",
+  testedCommit: "4f91bd5",
   intro: "This round does not test a finished picker. It tests how an emoji can get into the app you are typing in, so we know which approach to build on. Work in a terminal inside the cloned repo: cd probe. Nothing here uploads anything. Setup changes your input sources and adds three keyboard shortcuts; ./setup.sh uninstall puts everything back. Trying each step in two or three different apps (for example a browser text box, a text editor, your terminal, and any chat app you use) is more useful than doing every step in one app.",
   scenarios: [
     { id: "0-report", title: "0. Environment report and self-test (no changes, 1 minute)", why: "Tells us exactly what your system offers, and whether the core input-method mechanism works on it at all.", try: "Run ./env-report.sh, then python3 ibus/selftest.py (it uses its own private IBus and touches none of your settings). Paste the output of both into the box below, or just say if either failed to run. Note anything surprising, such as a missing package." },
