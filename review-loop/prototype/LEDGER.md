@@ -96,3 +96,23 @@ Decision: no third reading pass. Both HIGHs concern ranking and the eval, which 
 - 2026-11-05: answer key frozen at 634d1ed (stories 2, personas 50, shortcodes 5, held-out 60 by Codex split 30/30 seed 20261105, noise 20). Codex's held-out set needed no edits (every emoji exists).
 - 2026-11-05, before the first eval run: the pass rule for multi-concept queries and sentences changed from "within the first N cells" to "within the first 3 / 5 lines". Reason: each section starts on a new line and a one-line concept row is a full line (14 cells), so a cell count would fail emoji that are plainly on the first screen. Single-concept queries keep "first 5 cells". No results existed when this was changed.
 - Discipline slip (2026-11-05): during the first tuning runs, `tools/eval.py` printed the held-out **test** half's totals (never its failures) on every run, and I saw them while choosing ranking changes. From here on, variants are chosen with `--tune-only`, which leaves the test half out entirely; the test half is opened once at the end. Its final number should be read with this in mind.
+
+## Enrichment results (2026-11-05)
+
+Final settings chosen with `--tune-only`; the test half was then opened once (`eval-final.json`).
+
+| source | baseline | enriched |
+|---|---|---|
+| held-out test half (main number) | 19/30 | **27/30 (90%)** |
+| held-out tuning half | 21/30 | 28/30 |
+| personas | 50/50 | 50/50 (top-1 39 -> 42) |
+| shortcodes | 5/5 | 5/5 |
+| stories | 0/2 | 0/2 |
+
+Targets (plan v3 4c): test half >= 85%: **met**. Enriched beats baseline on pass, hit@1 and MRR for every source: met except stories (pass 0/2 both; MRR 0.67 -> 1.00) and personas pass (50/50 both). Regressions <= 2: **met (0)**. Both stories pass: **missed**. Noise rules: **met**. Blind judge prefers enriched on >= 2/3 of 30 queries: **missed** (14 enriched, 4 baseline, 12 split or same; relevant of top 10: 5.5 vs 3.1). Baseline won at least once mostly on multi-word queries, where the new first line mixes all-words matches and each word's pick.
+
+Stories, as they now behave: "american flag happy" shows 🇺🇸 first and the happy faces within the first three lines, but fails the frozen decoy rule because 🇦🇸 is second. The vet sentence shows 🙏 first and dogs on the first line but no hospital: no generated term links "vet" to 🏥 (the prompt deliberately does not mention "vet", which is an answer-key word). A variant that passed story 1 (evidence bonus off, one all-words match before the picks) cost a tuning query and a regression, so it was not taken.
+
+Prompt v1 used "american" and "vet" as examples, which are story words; prompt v2 removed every example that appears in the answer key (checked by script) and its results are the ones reported.
+
+Bugs the build's own tests caught: an empty `<layout_variant>` in the engine file makes IBus refuse to activate the engine ("Set global engine failed: Operation was cancelled") - the installer would have produced exactly that for Frank's plain "us" layout; the engine template comment contained the placeholders and got rewritten by the substitution; the search box grabbed focus with its text selected.

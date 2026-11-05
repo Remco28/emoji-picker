@@ -142,8 +142,8 @@ class PickerWindow(Adw.ApplicationWindow):
         self._show_results(self.options.get("query", ""))
         if self.options.get("query"):
             self.entry.set_text(self.options["query"])
-            self.entry.set_position(-1)
-        self.entry.grab_focus()
+        self.entry.grab_focus_without_selecting()
+        self.entry.set_position(-1)
 
     # ---- building the chart ----------------------------------------------
 

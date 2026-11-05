@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <component>
+  <!-- install.sh fills in the engine path, the keyboard layout and, only when
+       there is one, a layout variant element: an empty variant element makes IBus
+       refuse to activate the engine (tested 2026-11-05, IBus 1.5.29). -->
   <name>org.freedesktop.IBus.EmojiPicker</name>
   <description>Passive engine that lets emoji-picker insert emoji</description>
   <exec>@EXEC@ --ibus</exec>
@@ -15,8 +18,7 @@
       <license>MIT</license>
       <author>emoji-picker</author>
       <icon>input-keyboard</icon>
-      <layout>@LAYOUT@</layout>
-      <layout_variant>@VARIANT@</layout_variant>
+      <layout>@LAYOUT@</layout>@VARIANT_ELEMENT@
       <longname>Keyboard with emoji picker</longname>
       <description>Your keyboard as usual; lets emoji-picker insert emoji</description>
       <rank>0</rank>

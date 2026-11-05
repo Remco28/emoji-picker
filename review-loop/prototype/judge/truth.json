@@ -1,0 +1,182 @@
+[
+ {
+  "n": 1,
+  "q": "tacos and margaritas",
+  "A": "enriched",
+  "B": "baseline"
+ },
+ {
+  "n": 2,
+  "q": "hot tea and a book",
+  "A": "baseline",
+  "B": "enriched"
+ },
+ {
+  "n": 3,
+  "q": "money",
+  "A": "enriched",
+  "B": "baseline"
+ },
+ {
+  "n": 4,
+  "q": "cat",
+  "A": "enriched",
+  "B": "baseline"
+ },
+ {
+  "n": 5,
+  "q": "crying face",
+  "A": "baseline",
+  "B": "enriched"
+ },
+ {
+  "n": 6,
+  "q": "be right back, walking the dog",
+  "A": "enriched",
+  "B": "baseline"
+ },
+ {
+  "n": 7,
+  "q": "I love you",
+  "A": "baseline",
+  "B": "enriched"
+ },
+ {
+  "n": 8,
+  "q": "cat in a box",
+  "A": "enriched",
+  "B": "baseline"
+ },
+ {
+  "n": 9,
+  "q": "facepalm",
+  "A": "enriched",
+  "B": "baseline"
+ },
+ {
+  "n": 10,
+  "q": "my bad",
+  "A": "enriched",
+  "B": "baseline"
+ },
+ {
+  "n": 11,
+  "q": "thumbs up",
+  "A": "enriched",
+  "B": "baseline"
+ },
+ {
+  "n": 12,
+  "q": "dog",
+  "A": "enriched",
+  "B": "baseline"
+ },
+ {
+  "n": 13,
+  "q": "work laptop coffee",
+  "A": "enriched",
+  "B": "baseline"
+ },
+ {
+  "n": 14,
+  "q": "pizza",
+  "A": "baseline",
+  "B": "enriched"
+ },
+ {
+  "n": 15,
+  "q": "good luck",
+  "A": "enriched",
+  "B": "baseline"
+ },
+ {
+  "n": 16,
+  "q": "can't wait",
+  "A": "enriched",
+  "B": "baseline"
+ },
+ {
+  "n": 17,
+  "q": "avocado",
+  "A": "enriched",
+  "B": "baseline"
+ },
+ {
+  "n": 18,
+  "q": "touch grass",
+  "A": "enriched",
+  "B": "baseline"
+ },
+ {
+  "n": 19,
+  "q": "sleeping face",
+  "A": "baseline",
+  "B": "enriched"
+ },
+ {
+  "n": 20,
+  "q": "big yikes",
+  "A": "enriched",
+  "B": "baseline"
+ },
+ {
+  "n": 21,
+  "q": "rainbow after the storm",
+  "A": "enriched",
+  "B": "baseline"
+ },
+ {
+  "n": 22,
+  "q": "ghosted me",
+  "A": "baseline",
+  "B": "enriched"
+ },
+ {
+  "n": 23,
+  "q": "that was so cringe",
+  "A": "baseline",
+  "B": "enriched"
+ },
+ {
+  "n": 24,
+  "q": "coffee and croissant",
+  "A": "enriched",
+  "B": "baseline"
+ },
+ {
+  "n": 25,
+  "q": "dog walking in the rain",
+  "A": "enriched",
+  "B": "baseline"
+ },
+ {
+  "n": 26,
+  "q": "I'm exhausted",
+  "A": "enriched",
+  "B": "baseline"
+ },
+ {
+  "n": 27,
+  "q": "plot twist",
+  "A": "baseline",
+  "B": "enriched"
+ },
+ {
+  "n": 28,
+  "q": "I have a crush",
+  "A": "baseline",
+  "B": "enriched"
+ },
+ {
+  "n": 29,
+  "q": "finally Friday",
+  "A": "enriched",
+  "B": "baseline"
+ },
+ {
+  "n": 30,
+  "q": "pizza, beer, and football",
+  "A": "enriched",
+  "B": "baseline"
+ }
+]

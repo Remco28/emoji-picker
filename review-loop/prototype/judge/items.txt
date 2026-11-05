@@ -1,0 +1,122 @@
+Each item: a search query typed into an emoji picker, and the first ten results of two different pickers, A and B, in the order a person would see them.
+
+1. query: "tacos and margaritas"
+   A: 🍋‍🟩 🌮 🍹 🫓 🇲🇽
+   B: 🌮 🍋‍🟩
+
+2. query: "hot tea and a book"
+   A: ☕ 🧋 🥵 📚 🍵 🫖 🌶️ 🌭 ♨️ 🫠
+   B: 🍵 🫖 ☕ 📚 🧋 👀 💁 💁‍♂️ 💁‍♀️ 🧉
+
+3. query: "money"
+   A: 💰 🤑 💸 🧧 💴 💵 💶 💷 💱 🫰
+   B: 💰 🤑 💸 🪙 🪎 💴 💵 💶 💷 💳
+
+4. query: "cat"
+   A: 🐈 😺 😽 🙀 😿 😾 🐱 🐈‍⬛ 😼 😸
+   B: 🐈 😺 😽 🙀 😿 😾 🐱 🐈‍⬛ 😼 😸
+
+5. query: "crying face"
+   A: 😢 😭 😿 😀 😪 😩 😂 🤣 🫠 🫫
+   B: 😢 😭 😿 😀 😪 😩 😂 🤣 😹 🧅
+
+6. query: "be right back, walking the dog"
+   A: 🚶‍➡️ 🚶‍♀️‍➡️ 🚶‍♂️‍➡️ 🐕 🚶 🚧 🔜 ↩️ 🚶‍♂️ 🚶‍♀️
+   B: 🚶‍➡️ 🚶‍♀️‍➡️ 🚶‍♂️‍➡️ 🔙 🐕 🚶 ➡️ 🥹 🤚 🚪
+
+7. query: "I love you"
+   A: 👶 🤟 🧒 👦 👧 🌱 💌 🏩 🥰 😍
+   B: 🧒 🤟 👦 👧 🌱 👶 📹 😟 👱 🤴
+
+8. query: "cat in a box"
+   A: 🐈 🍱 😺 😽 🙀 😿 😾 🐱 🐈‍⬛ 😼
+   B: 🍱 🐈 🥡 🧃 🗃️ 🗳️ ☑️ 🥊 🎁 🪗
+
+9. query: "facepalm"
+   A: 🤦 🤦‍♂️ 🤦‍♀️
+   B: 🤦 🤦‍♂️ 🤦‍♀️
+
+10. query: "my bad"
+   A: 🤭 🙊 🙇 🙇‍♂️ 🙇‍♀️ 🪌 🦡 🏸 🦹 👎
+   B: 🦡 🏸 📛 👎 🦹 🦹‍♂️ 🦹‍♀️
+
+11. query: "thumbs up"
+   A: 👍 ⬆️ 👎 🫹 🫺 🫰 🪴 🆙 🫴 ☝️
+   B: 👍 ⬆️ 👎 🫹 🫺 🫰 🆙 🫴 ☝️ 🤲
+
+12. query: "dog"
+   A: 🐕 🐶 🦮 🐕‍🦺 🌭 🐩 🦴 🐾 🥺 💩
+   B: 🐕 🐶 🦮 🐕‍🦺 🌭 🦴 🐩
+
+13. query: "work laptop coffee"
+   A: 💻 🧑‍💻 👨‍💻 ☕ 👷 👩‍💻 ⌨️ 🤎 🟤 🟫
+   B: 💻 ☕ 💦 👷 👷‍♂️ 👷‍♀️
+
+14. query: "pizza"
+   A: 🍕 🍄‍🟫
+   B: 🍕 🍄‍🟫 🤤 🧀 🇮🇹 🍍 🍄 🍅 🫒
+
+15. query: "good luck"
+   A: 🫡 🤞 🍀 🐞 🪬 🎍 🧧 🧿 🥠 🎰
+   B: 🫡 🧧 😪 🤞 🍀 😴 💖 💤 👍 👎
+
+16. query: "can't wait"
+   A: 😃 🫷 🫸 🤚 🖐️ ✋ ☝️ 🐢 🚥 🚦
+   B: 🫷 🫸 ⏳ ⏰
+
+17. query: "avocado"
+   A: 🥑
+   B: 🥑
+
+18. query: "touch grass"
+   A: 🟩 🤏 🦗 🤞 🫆 🦔 🌵 💄 ✉️
+   B: 🦗
+
+19. query: "sleeping face"
+   A: 😴 😪 😀 💤 🛌 🫠 🫫 😉 😗 ☺️
+   B: 😴 😪 🐨 😀 👼 💤 🛌 🏕️ ⛺ 🫠
+
+20. query: "big yikes"
+   A: 😰 😃 😓 😬 😦 😨 😱 🙀 🙈 🐯
+   B: 😰 😃 😓 🥺 🐯 🐅 🐆
+
+21. query: "rainbow after the storm"
+   A: 🌈 ⛈️ 🏳️‍🌈 🦄 🌦️ 🇿🇦 🌩️ 🌪️ 🌬️ 🌀
+   B: ⛈️ 🌈 🏳️‍🌈
+
+22. query: "ghosted me"
+   A: 🧑‍🔧 🧜 🧜‍♂️ 🧜‍♀️ 🍈 🚇 🪋 📣 📝 🕎
+   B: 👻 🧑‍🔧 🧜‍♂️ 🧜‍♀️ 🍈 🚇 🪋 🕎 🧜 📣
+
+23. query: "that was so cringe"
+   A: 😖
+   B: 😖 🫠 🫣 😬 🤮 😳 🙈 🫦 🤦 🤦‍♂️
+
+24. query: "coffee and croissant"
+   A: 🥐 ☕ 🧈 🇫🇷 🤎 🟤 🟫 🇨🇴 🇨🇷 🇪🇹
+   B: ☕ 🥐
+
+25. query: "dog walking in the rain"
+   A: 🚶 🚶‍♂️ 🚶‍♀️ 🐕 🌧️ 🚶‍➡️ ☔ 🐶 🦮 🐕‍🦺
+   B: 🐕 🚶 🌧️ 🐶 🦮 🐕‍🦺 🌭 🦴 🐩 🚶‍♂️
+
+26. query: "I'm exhausted"
+   A: 😮‍💨 🫩 😫 🫠 😪 😴 😵 😓 😩 💤
+   B: 😮‍💨 🫩
+
+27. query: "plot twist"
+   A: 🪢 🥨 🌀 🔀
+   B: 🤯 🪢 ➰ ➿ 🥨 🌀 🌪️ 🔀
+
+28. query: "I have a crush"
+   A: 🥰 💔
+   B: 🥰 😍 😻 💘 💗 💓 🩷 💔 💌 🔥
+
+29. query: "finally Friday"
+   A: 😮‍💨 🐈‍⬛ 🙌 😌 🦃 🐟 🍕 🍺 🍻 🏬
+   B: (no results)
+
+30. query: "pizza, beer, and football"
+   A: 🍺 🍕 🏈 🍄‍🟫 🤤 🧀 🇮🇹 🍍 🍄 🍅
+   B: 🍕 🍺 🏈 🍄‍🟫 🍻 🫚 🏉 ⚽
+

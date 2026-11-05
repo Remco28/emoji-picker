@@ -1,0 +1,4 @@
+#!/bin/sh
+# Opens the emoji picker. install.sh binds this to Ctrl+Alt+E.
+HERE=$(cd "$(dirname "$0")/.." && pwd)
+PYTHONPATH="$HERE${PYTHONPATH:+:$PYTHONPATH}" exec python3 -m emoji_picker "$@"

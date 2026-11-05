@@ -1,45 +1,82 @@
 # emoji-picker
 
-A fast, reliable emoji picker for Linux (Wayland + GNOME first). Emoji only.
+A keyboard-first emoji picker for Ubuntu / GNOME on Wayland. Emoji only.
 
-**Status: research probe, not a picker yet.** The hard part is not the
-window, it is getting an emoji into the app you were typing in without
-stray characters or a clobbered clipboard. Before building, this repo tests
-which insertion route actually works on a real Wayland GNOME desktop.
+Press **Ctrl+Alt+E**, type a few words or a whole sentence, press **Enter**:
+the emoji appears in the app you were typing in, with nothing left behind.
 
-## Routes under test
+**Status: working prototype**, tested headlessly on Ubuntu 24.04 (X11) and
+awaiting its first real test on Ubuntu 26.04 (Wayland). See "What is known"
+below.
 
-| Route | Skips the clipboard | Needs |
+## How it works
+
+- **Search by meaning, with no AI at runtime.** Every emoji carries extra
+  search terms written once, at build time, by an LLM (for example 🇺🇸 gets
+  "american flag", "fourth of july"; 🏥 gets "surgery", "get well soon").
+  The picker itself does plain keyword search in under a millisecond.
+- **Insertion without the clipboard.** A small passive input-method engine
+  (IBus) commits the emoji straight into the focused app. It passes every
+  key through, so typing is unchanged. If it cannot insert, the picker copies
+  the emoji instead and says so.
+- **Learns you.** Recent and frequent emoji first; the skin tone you choose
+  is remembered per emoji and becomes your default.
+
+## Install
+
+Needs Python 3 with GTK 4, libadwaita and IBus bindings (present on Ubuntu
+GNOME) and the Noto Color Emoji font.
+
+```
+git clone https://github.com/Remco28/emoji-picker
+cd emoji-picker
+./install.sh --dry-run   # see every step first
+./install.sh             # asks for your password once
+```
+
+Then log out and back in once (so IBus loads the engine). Your original
+input sources and shortcut list are backed up to
+`~/.local/state/emoji-picker/backup/`. `./uninstall.sh` removes only what
+the installer added.
+
+## Keys
+
+| Key | Does |
+|---|---|
+| typing | narrows the chart; works for words, phrases and sentences |
+| arrows, Page Up/Down | move the highlight |
+| Enter | insert the highlighted emoji |
+| Tab | skin tones for the highlighted emoji (Tab or Esc to go back) |
+| Ctrl+C | copy instead of inserting |
+| Ctrl+plus / Ctrl+minus | bigger / smaller emoji |
+| Esc | clear the search; on an empty search, close |
+| `:fire` | search shortcodes |
+
+## What is known
+
+Search quality is measured against a frozen answer key
+(`tests/eval_queries.json`), including 60 queries written blind by another
+vendor's model:
+
+| | plain keywords | with build-time terms |
 |---|---|---|
-| Input method (a passive IBus engine commits the text) | yes | one file in `/usr/share/ibus/component` |
-| RemoteDesktop portal pastes for you | no | a one-time permission dialog |
-| Copy only | no | nothing |
+| held-out test half | 19/30 | 27/30 |
+| held-out tuning half | 21/30 | 28/30 |
+| blind judge (Gemini, 30 queries, both orders) | preferred 4 times | preferred 14 times (12 ties) |
 
-The eventual picker will pick the best available route at startup and fall
-back down this list.
+Known gaps: "vet" does not lead to 🏥 (no term links them); after
+"american flag happy" the American Samoa flag still ranks second; startup
+time on a real Wayland desktop is not measured yet. The full record is in
+`review-loop/prototype/`.
 
-## Try it
-
-Open `human_feedback/round-2026-11-03-insertion-probe/index.html` in a
-browser and follow it. The short version, from `probe/`:
+## Development
 
 ```
-./env-report.sh              # read-only report of your system
-python3 ibus/selftest.py     # headless engine test, private IBus, no sudo
-./setup.sh install           # engine + Ctrl+Alt+1/2/3 test shortcuts (sudo once)
-./setup.sh uninstall         # restores your input sources and shortcuts
+python3 -m unittest discover -s tests -t .   # unit + headless IBus tests
+python3 tools/eval.py                        # search quality
+python3 tools/build_data.py                  # rebuild emoji data (pinned emojibase)
+python3 tools/enrich.py                      # regenerate search terms (needs `claude`)
 ```
 
-## Findings so far
-
-- IBus only loads a custom engine from `/usr/share/ibus/component` (or
-  `IBUS_COMPONENT_PATH`). Per-user data dirs are ignored, so an IBus-based
-  picker needs a system install, realistically a `.deb`.
-- A per-context `set_engine` does not start an engine; the global-engine
-  switch GNOME uses does.
-- With no app focused, IBus parks the engine on an internal context and
-  still accepts commits, which are then dropped. "Accepted" is not
-  "delivered", so timing after the picker closes is the main risk.
-- Headless on Ubuntu 24.04 (IBus 1.5.29): commits of simple, skin-tone and
-  ZWJ-family emoji arrive intact, 20 ms after focus returns. Real apps on
-  Wayland are untested; that is what the probe is for.
+Emoji data: [emojibase](https://emojibase.dev) (MIT), derived from Unicode
+CLDR. The `probe/` folder holds the earlier insertion experiments.
