@@ -1,5 +1,6 @@
-# Plan: emoji-picker prototype with build-time keyword enrichment
+# Plan v2: emoji-picker prototype with build-time keyword enrichment
 
+Version 2, after the first peer pass (findings and what changed: `LEDGER.md`).
 Frozen for review. The problem, Frank's decisions and the established facts are
 in `PROBLEM.md` beside this file; this plan does not repeat them.
 
@@ -10,14 +11,15 @@ nothing left behind?**
 
 ## 1. Scope
 
-In: the picker window, search (keywords, prefixes, phrases, shortcodes,
-typo tolerance), build-time enrichment and its evaluation, recents and
+In: the picker window, search (keywords, prefixes, phrases, shortcodes),
+build-time enrichment and its evaluation, recents and
 frequency, skin-tone variants, insertion through the passive IBus engine with
 a clipboard fallback, install/uninstall scripts, tests.
 
 Out (later): replacing Super+., a .deb package, languages other than English,
 other keyboard layouts beyond what the installer copies, settings UI,
-"insert several then close", portal paste (it fails in terminals and
+"insert several then close", typo tolerance, a resident background
+process (only if a fresh process per press proves too slow), portal paste (it fails in terminals and
 overwrites the clipboard; copy-only is the fallback instead).
 
 ## 2. Shape of the code
@@ -35,7 +37,7 @@ emoji_picker/            Python package (stdlib + PyGObject only)
   data/enrich-en.json    build-time enrichment (committed)
 engine/engine.py         passive IBus engine (from the probe, extended)
 engine/emoji-picker.xml.in
-tools/build_data.py      emojibase tarball (pinned version + sha256) -> data/emoji.json
+tools/build_data.py      emojibase tarball (pinned version + sha256) -> data/emoji.json (done)
 tools/enrich.py          batches -> LLM -> validated keywords -> data/enrich-en.json
 tools/eval.py            scores search against the frozen query set
 tests/                   unittest (no pytest dependency)
@@ -59,20 +61,27 @@ license) are added to the repo.
 would draw as empty boxes. At startup `fonts.py` reads the font's character
 set (`fc-query`/`fc-match` output, single code points), finds the newest emoji
 version all of whose single-code-point emoji are present, and hides emoji
-newer than that. Cached per font file mtime.
+newer than that. Cached per font file mtime. This is needed: the data has
+25 emoji of versions 16-18 and the development machine's Noto (2.047) stops
+at 15.1. Noto ships every standard (RGI) sequence of each version it
+supports, so a version cutoff also covers ZWJ sequences and flags.
 
 ## 4. Enrichment (tested first, as Frank asked)
 
 ### 4a. The answer key comes before the keywords
 
 `tests/eval_queries.json` is written and committed **before** any enrichment
-is generated, so the keywords cannot be fitted to it. Each entry: the query,
-and one or more groups of acceptable emoji; a query passes when every group
-has a member in the top N (N = 5 for one concept, 10 for multi-concept
-queries, 12 for sentences). Three sources, kept separate in the file:
+is generated, so the keywords cannot be fitted to it, and no model that
+generates keywords ever reads it. Each entry: the query, one or more groups
+of acceptable emoji, and optional **decoys** that must rank below the first
+acceptable emoji of every group. A query passes when every group has a
+member in the top N (N = 5 for one concept, 10 for multi-concept queries,
+12 for sentences) and no decoy outranks it. Three sources, kept separate in
+the file:
 
 1. **Frank's stories**: "american flag happy" (needs 🇺🇸, and one of the
-   happy faces) and the vet sentence (needs a dog, one of 🏥 🩺 🚑, and 🙏).
+   happy faces; decoys 🇦🇸 and 🏈) and the vet sentence (needs a dog, one of
+   🏥 🩺 🚑, and 🙏).
 2. **Persona queries** from the earlier simulated users: "skull", "party",
    "clap", "happy dog", "star", "check", "cake", "birthday", "tired but
    glad", "well done", "puppy", "praise", "tent fire", and others, about 40.
@@ -82,9 +91,13 @@ queries, 12 for sentences). Three sources, kept separate in the file:
    expectations (an emoji that does not exist), not for difficulty. This set
    is never shown to the enrichment model and is the main number.
 
-Plus 10 **noise queries** ("the", "and", "asdfgh", "ok so") that must not
-produce confident nonsense: stopword-only queries show the browse view;
-gibberish shows "No matches".
+Plus 20 **noise queries**, with rules a script checks: a query made only
+of stopwords ("the", "ok so") shows the browse view, not results; gibberish
+("asdfgh", "qzxv") returns no results; and across the noise queries no
+emoji appears in more than 3 of the top-5 lists (no "default answer").
+
+A fourth source comes later and is not scored here: Frank's own queries in
+his test round.
 
 ### 4b. Generating keywords
 
@@ -111,14 +124,24 @@ to read.
 ### 4c. Scoring
 
 `tools/eval.py` runs every query against (a) baseline: labels + tags +
-shortcodes, and (b) baseline + enrichment, and reports hit@1 and pass rate
-per source, the list of queries that regress, and search time.
+shortcodes, and (b) baseline + enrichment, and reports per source: pass
+rate, hit@1, mean reciprocal rank of the first acceptable emoji, the rank
+change per query (better / same / worse), the queries that regress, the
+noise rules, and search time.
+
+**Relevance, judged blind by another vendor.** Presence in the top N does
+not show whether the rest of the list is junk. For 30 queries sampled from
+the held-out set, a Gemini reader (agy, read-only) gets the two top-10 lists
+unlabelled, in random order (each query judged in both orders), and says
+which list is more useful and how many of its 10 are relevant. Neither
+Claude nor the keyword generator judges.
 
 Targets: held-out pass rate >= 85% enriched; enriched beats baseline on
-every source; no more than 2 queries that the baseline passed now fail;
-both of Frank's stories pass. If targets are missed I change the prompt or
-the ranking (not the answer key) and rerun; each run's numbers go in the
-ledger.
+pass rate, hit@1 and MRR for every source; no more than 2 queries that the
+baseline passed now fail; both of Frank's stories pass; all noise rules
+hold; the blind judge prefers enriched on at least two thirds of the
+sampled queries. If targets are missed I change the prompt or the ranking
+(never the answer key) and rerun; each run's numbers go in the ledger.
 
 ## 5. Search
 
@@ -133,35 +156,44 @@ Pure Python, no model. Built once at startup into dictionaries.
 - **Concepts**: the query is split greedily into the longest known phrases
   of up to 3 words ("american flag", "thumbs up"); the rest are one-word
   concepts. The last word is also matched as a **prefix** while typing (no
-  trailing space), so results narrow on every keystroke. A word of 5+
-  letters with no exact or prefix match gets **one-typo** matches.
+  trailing space), so results narrow on every keystroke.
 - **Shortcodes**: a query starting with `:` matches shortcodes only, by
   prefix (`:fir` finds 🔥).
 - **Ranking**: emoji that match **all** concepts come first ("Best
   matches"). If there is more than one concept, each concept then gets its
-  own short row ("american flag", "happy"), so "american flag happy" shows
-  🇺🇸 and happy faces even though no single emoji is both. Personal use adds
+  own row of at most two lines ("american flag", "happy"), so "american
+  flag happy" shows 🇺🇸 and happy faces even though no single emoji is both,
+  and a long sentence cannot be swamped by one word. Personal use adds
   a capped bonus (frequency with a 14-day half-life). Ties go to emojibase
   order.
 - **Speed target**: under 5 ms per keystroke for search on this machine.
 
 ## 6. The window
 
-- Adw.Application, single instance, **resident**: started hidden at login
-  (autostart file) and by D-Bus activation if not running; the shortcut
-  only asks it to show. Hiding instead of quitting keeps it instant.
+- A **new process per shortcut press**, as in the probe, which is measured
+  to open and take focus on Frank's Wayland session. It exits after
+  inserting or on Esc. Cold start (Python, GTK, data, index, window) is
+  measured under Xvfb; target under 400 ms. A resident process is a later
+  optimisation, only if this is too slow, because showing an existing window
+  on Wayland without an activation token is unmeasured.
+- The search box uses GTK's simple input method (`im-module` set to
+  `gtk-im-context-simple`), so IBus never sees the picker: a commit cannot
+  land in the search box, and the engine's focus events come only from real
+  apps and IBus's fake context.
 - Default size about 760 x 560, resizable, size remembered. Ctrl+plus /
   Ctrl+minus change the emoji size (remembered).
 - Top: a large search box, always focused. Below, a scrolled chart of
   sections. Empty query: **Recent** (last 16), **Frequent** (top 24), then
   every category in emojibase order. With a query: **Best matches**, then a
-  row per concept, then **Related** (prefix and typo matches).
+  row per concept, then **Related** (prefix matches).
 - Bottom bar: the highlighted emoji's name and shortcode, and the keys:
-  "Enter insert · Ctrl+Enter skin tones · Esc close".
+  "Enter insert · Tab skin tones · Esc close".
 - Sections are FlowBoxes with a fixed column count computed from the width.
-  The browse view is built once; result sections (at most ~150 emoji) are
-  rebuilt per keystroke. Target: under 50 ms from keystroke to redrawn
-  results on this machine.
+  The browse view's first screen is built before the window shows and the
+  rest in idle time; result sections (at most ~150 emoji) are rebuilt per
+  keystroke. Target: under 50 ms from keystroke to redrawn results on this
+  machine. (GridView would virtualise, but has no section headers in
+  GTK 4.14.)
 
 **Keys** (search box keeps focus throughout):
 
@@ -171,7 +203,7 @@ Pure Python, no model. Built once at startup into dictionaries.
 | arrows | move the highlight through the chart, across sections |
 | Page Up / Down | move by a screen |
 | Enter | insert the highlighted emoji (with its remembered tone) and close |
-| Ctrl+Enter | open the tone/variant chooser for the highlighted emoji; arrows + Enter pick and insert |
+| Tab | open the tone/variant strip for the highlighted emoji; arrows + Enter pick and insert; Tab or Esc returns |
 | Esc | clear the search; if already empty, close |
 | mouse | hover highlights, click inserts, right-click opens variants |
 
@@ -185,34 +217,33 @@ offer all tone pairs.
 
 ## 7. Insertion
 
-1. Before hiding, the window asks the engine for its focus **generation**
-   counter (it increments on every focus_in) while the picker's own search
-   box holds focus.
-2. It hides itself; focus returns to the previous app.
-3. It waits until the engine reports a newer generation **and** no further
-   focus change for 60 ms; if the engine also reports a cursor-location
-   update after that focus_in (real text fields send one, the internal fake
-   context did not in testing), it commits at once. Then it sends the text.
-   Overall limit 1.5 s.
-4. If the engine is unreachable, not the active input source, or the limit
-   passes, the emoji is put on the clipboard and a notification says
-   "Copied: press Ctrl+V (Ctrl+Shift+V in a terminal)". The clipboard is
-   served by the resident app, so it survives the window hiding.
+The engine counts focus_in events (a **generation**) and reports, on
+request, the generation, the time of the last focus change, and whether it
+is the active engine.
+
+1. On Enter, the picker reads the generation (call it g0) and hides.
+   While the picker was showing, the previous app had lost focus and IBus
+   had moved the engine to its fake context; the picker's own search box is
+   invisible to IBus (section 6).
+2. It then polls every 25 ms and commits only when **all** hold:
+   at least **150 ms** since hiding (the delay measured to work on Frank's
+   machine; the plan never commits sooner), the generation is **above g0**
+   (a real app took focus after the picker hid), and **no focus change for
+   the last 30 ms**.
+3. If the engine is unreachable, is not the active engine, or the
+   conditions are not met within 2 s, the emoji is copied to the clipboard
+   and a notification says: "Could not insert. Copied: press Ctrl+V
+   (Ctrl+Shift+V in a terminal)". This is a **degraded mode, counted as a
+   failure**, never as success. (The probe showed the clipboard keeps the
+   text after the process exits.)
+
+An app with no input-method support never raises the generation, so it
+falls back to the clipboard rather than committing into nothing.
 
 The engine logs every focus change, capability and cursor-location event
-with timestamps, so Frank's next test tells us whether step 3's heuristics
-hold on Wayland.
-
-**Focus when showing.** A resident app on Wayland may not get focus when it
-presents an existing window without an activation token (GNOME may show
-"Emoji Picker is ready" instead). The shortcut command therefore forwards the
-token it was launched with: it calls the app's
-`org.freedesktop.Application.Activate` over D-Bus with `gdbus` (a C program,
-fast) passing `activation-token` and `desktop-startup-id` from its
-environment as platform data, so GTK uses it when presenting. The app logs
-whether a token arrived and whether the window became active. If this fails
-on Frank's machine, fallback mode is a fresh process per shortcut press
-(slower start, proven to focus).
+with timestamps. These are diagnostics only; no decision depends on cursor
+locations (the earlier belief that the fake context sends none was not
+established).
 
 ## 8. Install and uninstall
 
@@ -221,48 +252,55 @@ on Frank's machine, fallback mode is a fresh process per shortcut press
 1. Backs up input sources and the custom-shortcut list (first run only).
 2. Writes the engine component to `/usr/share/ibus/component/` with the
    repo path, and the keyboard layout copied from the user's first xkb input
-   source (Frank: `us`).
+   source (Frank: `us`); runs `ibus write-cache`.
 3. Adds the engine as the **first** input source, keeping the others after
    it (Super+Space switches back).
-4. Installs a .desktop file, a D-Bus service file and an autostart entry in
-   the user's home.
-5. Adds a custom shortcut **Ctrl+Alt+E** running the show command, warning
-   if that binding is already taken.
-6. Does **not** run `ibus restart` (it broke Super+. last time); it tells the
-   user to log out and back in once.
+4. Adds a custom shortcut **Ctrl+Alt+E** running the picker, warning if
+   that binding is already taken.
+5. Does **not** run `ibus restart` (it broke Super+. last time). If
+   `ibus list-engine` already lists the engine, it selects it with
+   `ibus engine`; otherwise it asks for one logout.
 
-`uninstall.sh` restores the backups, removes every file it added (sudo for
-the component), and also asks for a logout.
+`uninstall.sh` removes **only its own entries** (the engine from the input
+sources, its shortcut from the list, its files; sudo for the component),
+keeping any changes the user made after installing. The backups are kept
+for manual recovery, not restored wholesale. It also asks for a logout if
+the engine is still the current source.
 
 ## 9. How it will be checked
 
 On the development machine:
 
 - Unit tests (stdlib unittest): search parsing and ranking, shortcodes,
-  prefix and typo matching, usage store (including a corrupt file), grid
+  prefix matching, usage store (including a corrupt file), grid
   navigation, variant memory, data build validation.
 - `tools/eval.py` numbers, baseline vs enriched, in the ledger.
-- Headless engine test (private ibus-daemon, as in the probe): the picker's
-  insert routine against a scripted focus sequence (picker context out ->
-  fake context in -> target context in), checking the text reaches the
-  target context and not the fake one.
-- The real window under Xvfb: show it via D-Bus, type queries through a
-  debug action, save screenshots, measure show time and keystroke-to-redraw
-  time, and memory use.
+- Headless engine test (private ibus-daemon, as in the probe): the
+  picker's insert routine against a scripted focus sequence (target out ->
+  fake in -> target in), checking the text reaches the target context, not
+  the fake one, and that with no target focus it falls back. This is a
+  regression test of the logic; it does not prove Wayland timing.
+- The real window under Xvfb: start it, type queries through a debug
+  option, save screenshots, measure cold start, keystroke-to-redraw time
+  and memory.
 
 Not checkable here and handed to Frank as a test round (an offline test page
-as in round 1): focus on show under Wayland, insertion into his apps,
-the shortcut, install/uninstall on 26.04, how it feels.
+as in round 1): focus on show under Wayland, insertion into his apps
+(with the engine logs), the shortcut, install/uninstall on 26.04, whether
+Super+., Ctrl+C/V and Shift still behave with the engine selected, ten
+searches of his own, and how it feels.
 
 **Done when**: unit tests pass, eval targets in section 4c are met, the
 window works under Xvfb with screenshots of the empty view, "american flag
-happy" and the vet sentence, and install/uninstall have been dry-run here as
-far as is safe (sudo steps excepted).
+happy" and the vet sentence, the headless insertion test passes, and
+install/uninstall have been dry-run here as far as is safe (sudo and
+gsettings steps against a throwaway settings backend).
 
 ## 10. Risks I know of
 
-1. Focus on show under Wayland (section 7): the biggest unknown.
-2. Commits lost to the fake context if focus returns slowly.
+1. Commits lost if an app takes focus later than the rules in section 7
+   allow; mitigated, not proven, until Frank's test logs.
+2. Cold start of a fresh Python/GTK process may feel slow.
 3. FlowBox speed in Python with the full browse chart.
 4. Enrichment noise: generic terms pulling in junk; guarded by the
    40-emoji cap, the noise queries and the regression count.

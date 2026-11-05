@@ -1,0 +1,23 @@
+You are an experienced Linux desktop developer (GTK 4, IBus, GNOME on Wayland). You are asked to solve a problem from scratch and write the plan you would follow. Nobody has shown you anyone else's plan.
+
+Materials (all inside your working directory, /home/frank/.cache/emoji-picker-review/plan-r1/solver):
+- PROBLEM.md: the problem, the owner's decisions (follow them; they are not up for debate), and facts already measured on his machine.
+- probe/: earlier probe code whose results PROBLEM.md reports (a passive IBus engine that commits text on request, a simulated picker, a setup script).
+- README.md: the repository's current README.
+
+The goal: a working prototype such that Frank can press a shortcut, type a few words or a sentence, see the emoji he means near the top of a big keyboard-navigable chart, press Enter, and have it appear in the app he was typing in, with nothing left behind.
+
+Write the plan you would follow, in under 1200 words, no code:
+1. The architecture: processes, what runs when, how the window is shown and how the emoji gets into the app.
+2. How "search by meaning" works with no model at runtime, and exactly how you would test that the build-time enrichment is good (and not fooling itself).
+3. The window and its keys.
+4. Install and uninstall on his machine.
+5. The three riskiest parts, and how you would find out early whether each works.
+
+For each claim about how a library or GNOME behaves, say whether you know it or believe it.
+
+Do not pad. A short plan that is right beats a long one.
+
+Known quirks: the measured facts in PROBLEM.md are real; build on them. You have no network access.
+
+Print your report as your reply; write no report file. Keep any command under two minutes. Say each finding as soon as you have it, not only at the end. If something fails or time runs short, report what you have and what you could not check.
