@@ -2,12 +2,12 @@
  "version": 1,
  "frozen": "2026-11-05",
  "rules": {
-  "top_n": {
-   "single": 5,
-   "multi": 10,
-   "sentence": 12
-  },
-  "pass": "every group has a member within the first N cells in display order, and no decoy appears before the first acceptable emoji of any group"
+  "layout": "each section starts on a new line; a line holds COLUMNS cells (emoji_picker/layout.py, default window width)",
+  "single": "the first acceptable emoji is within the first 5 cells of the display order",
+  "multi": "every group has a member within the first 3 lines",
+  "sentence": "every group has a member within the first 5 lines (about one screen)",
+  "decoys": "no decoy appears earlier in display order than the first acceptable emoji of every group",
+  "changed": "2026-11-05, before the first run: multi and sentence measured in lines instead of cells (one-line concept rows hold a full line each, so cell counts would fail emoji visible on the first screen)"
  },
  "sources": {
   "stories": [

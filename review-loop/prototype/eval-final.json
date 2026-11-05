@@ -1,0 +1,3709 @@
+{
+ "baseline": {
+  "stories": [
+   {
+    "q": "american flag happy",
+    "kind": "multi",
+    "pass": false,
+    "first": [
+     null,
+     [
+      2,
+      0
+     ]
+    ],
+    "decoy_before": "🇦🇸",
+    "top1": false,
+    "rr": 0.3333333333333333,
+    "top": "🇦🇸🏈😀🏁😃😄😁😆🤣😂🙂😇"
+   },
+   {
+    "q": "my dog went to the vet and it isn't looking good, please pray for him",
+    "kind": "sentence",
+    "pass": false,
+    "first": [
+     [
+      2,
+      0
+     ],
+     null,
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🙏🥺🐕🥹🤲🛐🐶🦮🐕‍🦺🌭🦴🐩"
+   }
+  ],
+  "personas": [
+   {
+    "q": "skull",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "💀☠🩻👲"
+   },
+   {
+    "q": "lol",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      3,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": false,
+    "rr": 0.25,
+    "top": "🍭😆😄🤣😂🫠😹"
+   },
+   {
+    "q": "party",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🎉🥳😛😜👯👯‍♂👯‍♀🍹🎊🪅🪩👒"
+   },
+   {
+    "q": "clap",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "👏🎬🪭"
+   },
+   {
+    "q": "happy dog",
+    "kind": "multi",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ],
+     [
+      1,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🐕😀🐶🦮🐕‍🦺🌭🦴🐩😃😄😁😆"
+   },
+   {
+    "q": "star",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "⭐🤩🌟🌠🌃✡☪✴🔯💫🧑‍🎤👨‍🎤"
+   },
+   {
+    "q": "check",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "✔✅☑🛫🏁🛄"
+   },
+   {
+    "q": "cake",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      1,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": false,
+    "rr": 0.5,
+    "top": "🥮🎂🍥🍰"
+   },
+   {
+    "q": "birthday",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🎂🥳💐🎈🎉🎁"
+   },
+   {
+    "q": "tired but glad",
+    "kind": "multi",
+    "pass": true,
+    "first": [
+     [
+      1,
+      0
+     ],
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "😊😫🥲😪😴🫩😵😩🥱💤🛌"
+   },
+   {
+    "q": "well done",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      2,
+      1
+     ]
+    ],
+    "decoy_before": null,
+    "top1": false,
+    "rr": 0.3333333333333333,
+    "top": "❤‍🩹⌛👏⏳💅✅☑✔"
+   },
+   {
+    "q": "puppy",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🐶🥺"
+   },
+   {
+    "q": "praise",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🙌"
+   },
+   {
+    "q": "tent fire",
+    "kind": "multi",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ],
+     [
+      1,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "⛺🔥🎪🚒🧯❤‍🔥🧑‍🚒🎆🧨👨‍🚒👩‍🚒🐦‍🔥"
+   },
+   {
+    "q": "camping",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🏕⛺🥾"
+   },
+   {
+    "q": "dinner",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      1,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": false,
+    "rr": 0.5,
+    "top": "🐟🍽🍴"
+   },
+   {
+    "q": "family",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "👪👨‍👦👨‍👧👩‍👦👩‍👧🧑‍🧒👨‍👩‍👦👨‍👩‍👧👨‍👨‍👦👨‍👨‍👧👩‍👩‍👦👩‍👩‍👧"
+   },
+   {
+    "q": "thumbs up",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "👍⬆👎🫹🫺🫰🆙🫴☝🤲📄🗞"
+   },
+   {
+    "q": "ship it",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      1,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": false,
+    "rr": 0.5,
+    "top": "🇮🇹🚢🛳⚓🔱"
+   },
+   {
+    "q": "reading",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "📖📗📘📙📚"
+   },
+   {
+    "q": "sleepy",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "😪🫩😩🥱💤😌😔🤤😴"
+   },
+   {
+    "q": "sad",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      1,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": false,
+    "rr": 0.5,
+    "top": "😥😔😪😕😟🙁☹🥺🥹😢😭😖"
+   },
+   {
+    "q": "love",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      3,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": false,
+    "rr": 0.25,
+    "top": "💌🏩🤟🥰😍😘😗😙😻💘💓💕"
+   },
+   {
+    "q": "thanks",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🙏🫂🦃"
+   },
+   {
+    "q": "good luck",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      3,
+      1
+     ]
+    ],
+    "decoy_before": null,
+    "top1": false,
+    "rr": 0.25,
+    "top": "🫡🧧😪🤞🍀😴💖💤👍👎👏🦸"
+   },
+   {
+    "q": "congrats",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "👏"
+   },
+   {
+    "q": "rip",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🪦💪🍎"
+   },
+   {
+    "q": "coffee",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "☕"
+   },
+   {
+    "q": "beer",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🍺🍻🫚"
+   },
+   {
+    "q": "money",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "💰🤑💸🪙🪎💴💵💶💷💳💹🫰"
+   },
+   {
+    "q": "eyes",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "👀👁🫣🙄😵‍💫👁‍🗨😃😄😁😊😍😚"
+   },
+   {
+    "q": "thinking",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🤔"
+   },
+   {
+    "q": "facepalm",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🤦🤦‍♂🤦‍♀"
+   },
+   {
+    "q": "shrug",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🤷🤷‍♂🤷‍♀"
+   },
+   {
+    "q": "wave",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      1,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": false,
+    "rr": 0.5,
+    "top": "🌊👋🏄🏄‍♂🏄‍♀"
+   },
+   {
+    "q": "hug",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🤗🫂👐"
+   },
+   {
+    "q": "sick",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "😷🤒🤢🤮🤧😵💉💊"
+   },
+   {
+    "q": "hospital",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🏥"
+   },
+   {
+    "q": "pray",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🙏📿🤲🛐👏"
+   },
+   {
+    "q": "church",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "⛪👼🔔"
+   },
+   {
+    "q": "usa",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🇺🇸"
+   },
+   {
+    "q": "pizza",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🍕🍄‍🟫"
+   },
+   {
+    "q": "cool",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🆒😎😛🪭"
+   },
+   {
+    "q": "angry",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "😠👿😤😡👺💢🗯"
+   },
+   {
+    "q": "scared",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      4,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": false,
+    "rr": 0.2,
+    "top": "🫢🫣😦😧😨😰😱😓🙈"
+   },
+   {
+    "q": "music",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      1,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": false,
+    "rr": 0.5,
+    "top": "🎼🎵🎶🎙🎚🎛🎤🎹🔊🎷🎺🪊"
+   },
+   {
+    "q": "bug",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🐛🪲🦗🐌🦋🫌🐜🐝🐞🪳🕷🕸"
+   },
+   {
+    "q": "warning",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "⚠🚸⛔🚫🚳🚭🚯🚱🚷📵🔞☢"
+   },
+   {
+    "q": "sleepy cat",
+    "kind": "multi",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ],
+     [
+      1,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "😪🐈🫩😩🥱💤😌😔🤤😴😺😽"
+   },
+   {
+    "q": "pizza and beer",
+    "kind": "multi",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ],
+     [
+      1,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🍕🍺🍄‍🟫🍻🫚"
+   }
+  ],
+  "shortcodes": [
+   {
+    "q": ":fire",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🔥🎆🧑‍🚒🚒🧨🧯"
+   },
+   {
+    "q": ":thumbsup",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "👍"
+   },
+   {
+    "q": ":joy",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "😂😹🕹"
+   },
+   {
+    "q": ":tada",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🎉"
+   },
+   {
+    "q": ":heart_eyes",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "😍😻"
+   }
+  ],
+  "heldout_tune": [
+   {
+    "q": "coffee",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "☕"
+   },
+   {
+    "q": "cat",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🐈😺😽🙀😿😾🐱🐈‍⬛😼😸😹😻"
+   },
+   {
+    "q": "heart",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "💖💗💓💞💕💟❣💔❤‍🩹❤🩷🧡"
+   },
+   {
+    "q": "birthday cake",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🎂🥳🥮🍥🍰💐🎈🎉🎁"
+   },
+   {
+    "q": "sunflower",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🌻"
+   },
+   {
+    "q": "book",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "📚📕📖📗📘📙🔖📔📑🎒🧾📓"
+   },
+   {
+    "q": "key",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🔑🗝🔐#⃣*⃣⌨🎹0⃣1⃣2⃣3⃣4⃣"
+   },
+   {
+    "q": "sleeping face",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "😴😪😀💤🛌🫠🫫😉😗☺🤪🤫"
+   },
+   {
+    "q": "money",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "💰🤑💸🪙🪎💴💵💶💷💳💹🫰"
+   },
+   {
+    "q": "can't wait",
+    "kind": "single",
+    "pass": false,
+    "first": [
+     null
+    ],
+    "decoy_before": null,
+    "top1": false,
+    "rr": 0.0,
+    "top": "🫷🫸⏳⏰"
+   },
+   {
+    "q": "good luck",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      3,
+      1
+     ]
+    ],
+    "decoy_before": null,
+    "top1": false,
+    "rr": 0.25,
+    "top": "🫡🧧😪🤞🍀😴💖💤👍👎👏🦸"
+   },
+   {
+    "q": "my bad",
+    "kind": "single",
+    "pass": false,
+    "first": [
+     null
+    ],
+    "decoy_before": null,
+    "top1": false,
+    "rr": 0.0,
+    "top": "🦡🏸📛👎🦹🦹‍♂🦹‍♀"
+   },
+   {
+    "q": "spill the tea",
+    "kind": "single",
+    "pass": false,
+    "first": [
+     [
+      4,
+      2
+     ]
+    ],
+    "decoy_before": "🫗",
+    "top1": false,
+    "rr": 0.2,
+    "top": "🫗🧋🫟🧑‍🏫🫖🍵👨‍🏫👩‍🏫☕📆🥲🥹"
+   },
+   {
+    "q": "Monday mood",
+    "kind": "single",
+    "pass": false,
+    "first": [
+     null
+    ],
+    "decoy_before": null,
+    "top1": false,
+    "rr": 0.0,
+    "top": ""
+   },
+   {
+    "q": "finally Friday",
+    "kind": "single",
+    "pass": false,
+    "first": [
+     null
+    ],
+    "decoy_before": null,
+    "top1": false,
+    "rr": 0.0,
+    "top": ""
+   },
+   {
+    "q": "I have a crush",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🥰💔"
+   },
+   {
+    "q": "send help",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      2,
+      1
+     ]
+    ],
+    "decoy_before": null,
+    "top1": false,
+    "rr": 0.3333333333333333,
+    "top": "📩🩼🆘"
+   },
+   {
+    "q": "facepalm",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🤦🤦‍♂🤦‍♀"
+   },
+   {
+    "q": "fingers crossed",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🤞🫰🤌⚔🎌😵🔀🖕🖐🖖🤏🤟"
+   },
+   {
+    "q": "break a leg",
+    "kind": "single",
+    "pass": false,
+    "first": [
+     null
+    ],
+    "decoy_before": null,
+    "top1": false,
+    "rr": 0.0,
+    "top": "💔🦵🔔⛓‍💥🦿🍗🧘🧘‍♂🧘‍♀👌🫘🫛"
+   },
+   {
+    "q": "cat in a box",
+    "kind": "multi",
+    "pass": true,
+    "first": [
+     [
+      1,
+      0
+     ],
+     [
+      12,
+      1
+     ]
+    ],
+    "decoy_before": null,
+    "top1": false,
+    "rr": 0.5,
+    "top": "🍱🐈🥡🧃🗃🗳☑🥊🎁🪗📤📥"
+   },
+   {
+    "q": "dog walking in the rain",
+    "kind": "multi",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ],
+     [
+      1,
+      0
+     ],
+     [
+      2,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🐕🚶🌧🐶🦮🐕‍🦺🌭🦴🐩🚶‍♂🚶‍♀🚶‍➡"
+   },
+   {
+    "q": "flight to Paris",
+    "kind": "multi",
+    "pass": false,
+    "first": [
+     null,
+     null
+    ],
+    "decoy_before": null,
+    "top1": false,
+    "rr": 0.0,
+    "top": "🪶🛫🛬"
+   },
+   {
+    "q": "baby sleeping",
+    "kind": "multi",
+    "pass": true,
+    "first": [
+     [
+      1,
+      0
+     ],
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "😴👶😪💤🛌👼🐤🍼🚼👩‍🍼👨‍🍼🧑‍🍼"
+   },
+   {
+    "q": "be right back, walking the dog",
+    "kind": "sentence",
+    "pass": true,
+    "first": [
+     [
+      3,
+      0
+     ],
+     [
+      5,
+      0
+     ],
+     [
+      4,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": false,
+    "rr": 0.25,
+    "top": "🚶‍➡🚶‍♀‍➡🚶‍♂‍➡🔙🐕🚶➡🥹🤚🚪🐶🦮"
+   },
+   {
+    "q": "camping with friends",
+    "kind": "multi",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ],
+     [
+      4,
+      2
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🏕👥⛺🥾🧑‍🤝‍🧑👭👫👬🫂"
+   },
+   {
+    "q": "hot tea and a book",
+    "kind": "multi",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ],
+     [
+      3,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "☕🧋🥵📚🍵🫖🌶🌭♨🫠😳🔥"
+   },
+   {
+    "q": "please call me",
+    "kind": "multi",
+    "pass": false,
+    "first": [
+     [
+      3,
+      1
+     ],
+     null
+    ],
+    "decoy_before": null,
+    "top1": false,
+    "rr": 0.25,
+    "top": "🥺🤙🥹🙏😥📲"
+   },
+   {
+    "q": "snow day, staying home",
+    "kind": "multi",
+    "pass": false,
+    "first": [
+     [
+      14,
+      3
+     ],
+     [
+      9,
+      2
+     ]
+    ],
+    "decoy_before": null,
+    "top1": false,
+    "rr": 0.1,
+    "top": "🧖🏘🏔🧖‍♂🧖‍♀🌞🪹🛖🏚🏠🏡🔨"
+   },
+   {
+    "q": "pizza, beer, and football",
+    "kind": "multi",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ],
+     [
+      1,
+      0
+     ],
+     [
+      2,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🍕🍺🏈🍄‍🟫🍻🫚🏉⚽"
+   }
+  ],
+  "heldout_test": [
+   {
+    "q": "pizza",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🍕🍄‍🟫"
+   },
+   {
+    "q": "dog",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🐕🐶🦮🐕‍🦺🌭🦴🐩"
+   },
+   {
+    "q": "thumbs up",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "👍⬆👎🫹🫺🫰🆙🫴☝🤲📄🗞"
+   },
+   {
+    "q": "umbrella",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "☂🌂🏖⛱☔"
+   },
+   {
+    "q": "airplane",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "✈🛩🛫🛬"
+   },
+   {
+    "q": "laptop",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "💻"
+   },
+   {
+    "q": "avocado",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🥑"
+   },
+   {
+    "q": "soccer ball",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "⚽🍙🎊🔮🪩⛹⛹‍♂⛹‍♀🎱🎈💬💭"
+   },
+   {
+    "q": "fire",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🔥🚒🧯❤‍🔥🧑‍🚒🎆🧨👨‍🚒👩‍🚒🐦‍🔥🪋🎇"
+   },
+   {
+    "q": "crying face",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "😢😭😿😀😪😩😂🤣🫠🫫😉😗"
+   },
+   {
+    "q": "rose",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🌹🏵"
+   },
+   {
+    "q": "I'm exhausted",
+    "kind": "single",
+    "pass": false,
+    "first": [
+     null
+    ],
+    "decoy_before": null,
+    "top1": false,
+    "rr": 0.0,
+    "top": "😮‍💨🫩"
+   },
+   {
+    "q": "that's awkward",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      3,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": false,
+    "rr": 0.25,
+    "top": "😐😑😶😬😳"
+   },
+   {
+    "q": "I'm dead",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      3,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": false,
+    "rr": 0.25,
+    "top": "😑😵😳💀☠🧟🧟‍♂🧟‍♀🪾⚰🪦😐"
+   },
+   {
+    "q": "that was so cringe",
+    "kind": "single",
+    "pass": false,
+    "first": [
+     null
+    ],
+    "decoy_before": null,
+    "top1": false,
+    "rr": 0.0,
+    "top": "😖"
+   },
+   {
+    "q": "plot twist",
+    "kind": "single",
+    "pass": false,
+    "first": [
+     null
+    ],
+    "decoy_before": null,
+    "top1": false,
+    "rr": 0.0,
+    "top": "🪢🥨🌀🔀"
+   },
+   {
+    "q": "touch grass",
+    "kind": "single",
+    "pass": false,
+    "first": [
+     null
+    ],
+    "decoy_before": null,
+    "top1": false,
+    "rr": 0.0,
+    "top": "🦗"
+   },
+   {
+    "q": "big yikes",
+    "kind": "single",
+    "pass": false,
+    "first": [
+     null
+    ],
+    "decoy_before": null,
+    "top1": false,
+    "rr": 0.0,
+    "top": "😰😃😓🥺🐯🐅🐆"
+   },
+   {
+    "q": "TGIF",
+    "kind": "single",
+    "pass": false,
+    "first": [
+     null
+    ],
+    "decoy_before": null,
+    "top1": false,
+    "rr": 0.0,
+    "top": ""
+   },
+   {
+    "q": "ghosted me",
+    "kind": "single",
+    "pass": false,
+    "first": [
+     null
+    ],
+    "decoy_before": null,
+    "top1": false,
+    "rr": 0.0,
+    "top": "🧑‍🔧🧜🧜‍♂🧜‍♀🍈🚇🪋📣📝🕎🫠❤‍🩹"
+   },
+   {
+    "q": "coffee and croissant",
+    "kind": "multi",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ],
+     [
+      1,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "☕🥐"
+   },
+   {
+    "q": "sun and beach",
+    "kind": "multi",
+    "pass": true,
+    "first": [
+     [
+      2,
+      0
+     ],
+     [
+      3,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": false,
+    "rr": 0.3333333333333333,
+    "top": "🌞⛱☀🏖⛅🌤🌥🌦🌻🌄🌅🌆"
+   },
+   {
+    "q": "pizza movie night",
+    "kind": "multi",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ],
+     [
+      6,
+      2
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🍕🎥🌃🍄‍🟫🍿🎞📽🎬🎦🌉😙😪"
+   },
+   {
+    "q": "happy birthday grandma",
+    "kind": "multi",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ],
+     [
+      2,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🎂🥳👵😀💐🎈🎉🎁😃😄😁😆"
+   },
+   {
+    "q": "I love you",
+    "kind": "multi",
+    "pass": false,
+    "first": [
+     [
+      8,
+      2
+     ],
+     [
+      27,
+      3
+     ]
+    ],
+    "decoy_before": null,
+    "top1": false,
+    "rr": 0.1111111111111111,
+    "top": "👶🤟🧒👦👧🌱💌🏩🥰😍😘😗"
+   },
+   {
+    "q": "tacos and margaritas",
+    "kind": "multi",
+    "pass": false,
+    "first": [
+     [
+      0,
+      0
+     ],
+     null
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🌮🍋‍🟩"
+   },
+   {
+    "q": "work laptop coffee",
+    "kind": "multi",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ],
+     [
+      1,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "💻☕💦👷👷‍♂👷‍♀"
+   },
+   {
+    "q": "rainbow after the storm",
+    "kind": "multi",
+    "pass": true,
+    "first": [
+     [
+      1,
+      0
+     ],
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "⛈🌈🏳‍🌈"
+   },
+   {
+    "q": "congrats on the new job",
+    "kind": "multi",
+    "pass": false,
+    "first": [
+     [
+      0,
+      0
+     ],
+     null
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "👏🏢🔛🌑⛱❤‍🔥🍖🤣🤬🤘🥿🚩"
+   },
+   {
+    "q": "I miss you, mom",
+    "kind": "multi",
+    "pass": false,
+    "first": [
+     [
+      2,
+      1
+     ],
+     null
+    ],
+    "decoy_before": null,
+    "top1": false,
+    "rr": 0.3333333333333333,
+    "top": "😘🤱😢👩‍🍼"
+   }
+  ]
+ },
+ "enriched": {
+  "stories": [
+   {
+    "q": "american flag happy",
+    "kind": "multi",
+    "pass": false,
+    "first": [
+     [
+      0,
+      0
+     ],
+     [
+      18,
+      2
+     ]
+    ],
+    "decoy_before": "🇦🇸",
+    "top1": true,
+    "rr": 1.0,
+    "top": "🇺🇸🇦🇸🏳‍🌈🎂🏁🇦🇼🇺🇲🇻🇮🌈🏈🦅🌎"
+   },
+   {
+    "q": "my dog went to the vet and it isn't looking good, please pray for him",
+    "kind": "sentence",
+    "pass": false,
+    "first": [
+     [
+      4,
+      0
+     ],
+     null,
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🙏🐾🧎🥺🐕🛐🧎‍♂🧎‍♀🧎‍➡🧎‍♀‍➡🧎‍♂‍➡🤲"
+   }
+  ],
+  "personas": [
+   {
+    "q": "skull",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "💀☠🩻👲🏴‍☠"
+   },
+   {
+    "q": "lol",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      4,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": false,
+    "rr": 0.2,
+    "top": "🍭😆😹😄🤣😂🫠🐵🌝🍬😭"
+   },
+   {
+    "q": "party",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🎉🥳👯‍♂🎊🪅🪩👒😜👯👯‍♀🪇😛"
+   },
+   {
+    "q": "clap",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "👏🎬🪭🦭"
+   },
+   {
+    "q": "happy dog",
+    "kind": "multi",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ],
+     [
+      16,
+      2
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🐕🎂🐶🦮🐕‍🦺🌭🐩🦴🐾🥺💩🚶"
+   },
+   {
+    "q": "star",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "⭐🤩🌟🌠🌃✡☪✴🔯💫🪋🧑‍🎤"
+   },
+   {
+    "q": "check",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "✔✅☑♟🔍🧾🛫🏁🛄🏨⌚📋"
+   },
+   {
+    "q": "cake",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      1,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": false,
+    "rr": 0.5,
+    "top": "🥮🎂🍥🍰🧁🍒🍓🦀🍍🥕🍢"
+   },
+   {
+    "q": "birthday",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🎂🥳🎈🎉🎁💐🪅🍰🧁♈♉♊"
+   },
+   {
+    "q": "tired but glad",
+    "kind": "multi",
+    "pass": true,
+    "first": [
+     [
+      1,
+      0
+     ],
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "😊😫🥲😀😄☺😺😥🍊😪😩😴"
+   },
+   {
+    "q": "well done",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "👏👍💮🥂⭐🏆🏅㊗⌛⏳✅💅"
+   },
+   {
+    "q": "puppy",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      1,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": false,
+    "rr": 0.5,
+    "top": "🥺🐶🐩🐾"
+   },
+   {
+    "q": "praise",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🙌"
+   },
+   {
+    "q": "tent fire",
+    "kind": "multi",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ],
+     [
+      1,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "⛺🔥🎪🏕🚒🧯❤‍🔥🧑‍🚒🎆🧨👨‍🚒👩‍🚒"
+   },
+   {
+    "q": "camping",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🏕⛺🥾🔦🚣🚣‍♂🚣‍♀🫎🐻🦟🌲🧭"
+   },
+   {
+    "q": "dinner",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🍽🐟🍴🥘🍗🥩😋🧑‍🍳👨‍🍳👩‍🍳🐔🍆"
+   },
+   {
+    "q": "family",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "👪👨‍👦👨‍👧👩‍👦👩‍👧🧑‍🧒👨‍👩‍👦👨‍👩‍👧👨‍👨‍👦👨‍👨‍👧👩‍👩‍👦👩‍👩‍👧"
+   },
+   {
+    "q": "thumbs up",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "👍⬆👎🫹🫺🫰🪴🆙🫴☝🤲📄"
+   },
+   {
+    "q": "ship it",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🚢🇮🇹🛳⚓🔱🚀🍝🦟🫒🗺🛵🧾"
+   },
+   {
+    "q": "reading",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "📖📗📘📙📚📕🔤🔖👓"
+   },
+   {
+    "q": "sleepy",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "😪🫩😩🥱💤😫🛌🐨🦥🌒🌙🌛"
+   },
+   {
+    "q": "sad",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      1,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": false,
+    "rr": 0.5,
+    "top": "😥🙁☹😢😿😕🥺😭💔🪊😔😪"
+   },
+   {
+    "q": "love",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      3,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": false,
+    "rr": 0.25,
+    "top": "💌🏩🤟🥰😍😘😻💘💓💕❤‍🔥❤"
+   },
+   {
+    "q": "thanks",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🙏🫂🙇🙇‍♂🙇‍♀😁🙂❤👍🦃🧡🌾"
+   },
+   {
+    "q": "good luck",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      1,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": false,
+    "rr": 0.5,
+    "top": "🫡🤞🍀🐞🪬🎍🧧🧿🥠🎰💚🎲"
+   },
+   {
+    "q": "congrats",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "👏🥳💐🎂🍾🍻🌟🎆🎉🎊🏆㊗"
+   },
+   {
+    "q": "rip",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🪦💀☠🕊⚰✝💪🍎🥭🍐🍑🍅"
+   },
+   {
+    "q": "coffee",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "☕🤎🟤🟫🇨🇴🇨🇷🇪🇹🇬🇹🇭🇳🫩😫🥱"
+   },
+   {
+    "q": "beer",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🍺🍻🫚🇩🇪🫃🥨🏓🇧🇪🇨🇿"
+   },
+   {
+    "q": "money",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "💰🤑💸🧧💴💵💶💷💱🫰🪙🪎"
+   },
+   {
+    "q": "eyes",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "👀👁🫣🙄😵‍💫👁‍🗨😃😄😁😊😍😚"
+   },
+   {
+    "q": "thinking",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🤔💭🧠💡🫂"
+   },
+   {
+    "q": "facepalm",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🤦🤦‍♂🤦‍♀"
+   },
+   {
+    "q": "shrug",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🤷🤷‍♂🤷‍♀👐"
+   },
+   {
+    "q": "wave",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      1,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": false,
+    "rr": 0.5,
+    "top": "🌊👋🏄🏄‍♂🏄‍♀〰🤚🖐🐳🚤🫠🥵"
+   },
+   {
+    "q": "hug",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🤗👐🫂🐻🫶🐨🌵🐘🐳🐋🥺🌳"
+   },
+   {
+    "q": "sick",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🤒😷🤢🤧💊🤮😵🌡💉🍲🦠🏥"
+   },
+   {
+    "q": "hospital",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🏥🚑😷🧑‍⚕👨‍⚕👩‍⚕📟🩺🩻⚕🆎🅾"
+   },
+   {
+    "q": "pray",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🙏🛐📿🤲🧎🧎‍♂🧎‍♀🧎‍➡🧎‍♀‍➡🧎‍♂‍➡⛪🕌"
+   },
+   {
+    "q": "church",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "⛪👼🔔☦🛐✝🇻🇦💒👒"
+   },
+   {
+    "q": "usa",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🇺🇸🦅🌎🗽🇦🇸🇯🇲"
+   },
+   {
+    "q": "pizza",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🍕🍄‍🟫🤤🧀🇮🇹🍍🍄🍅🫒"
+   },
+   {
+    "q": "cool",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🆒😎🪭😛🕶🖤🤘👍🍃❄🆗💠"
+   },
+   {
+    "q": "angry",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "😠👿😡💢🗯👺😤🖕🙎🙎‍♂🙎‍♀🐡"
+   },
+   {
+    "q": "scared",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "😱🫢🫣😦😧😨😰😓🙈🫨🐁🐔"
+   },
+   {
+    "q": "music",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      1,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": false,
+    "rr": 0.5,
+    "top": "🎼🎵🎶🎛🎷🪗🪉🔊🎙🎚🎤🎸"
+   },
+   {
+    "q": "bug",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🐛🪲🦗🪳🕷🪰🐞🦟📯🎺🤒🤢"
+   },
+   {
+    "q": "warning",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "⚠🚩☠🚔🚨🚧‼❕❗🔴🟨🛘"
+   },
+   {
+    "q": "sleepy cat",
+    "kind": "multi",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ],
+     [
+      1,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "😪🐈🫩😩🥱💤😫🛌🐨🦥🌒🌙"
+   },
+   {
+    "q": "pizza and beer",
+    "kind": "multi",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ],
+     [
+      1,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🍕🍺🍄‍🟫🤤🧀🇮🇹🍍🍄🍅🫒🍻🫚"
+   }
+  ],
+  "shortcodes": [
+   {
+    "q": ":fire",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🔥🎆🧑‍🚒🚒🧨🧯"
+   },
+   {
+    "q": ":thumbsup",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "👍"
+   },
+   {
+    "q": ":joy",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "😂😹🕹"
+   },
+   {
+    "q": ":tada",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🎉"
+   },
+   {
+    "q": ":heart_eyes",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "😍😻"
+   }
+  ],
+  "heldout_tune": [
+   {
+    "q": "coffee",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "☕🤎🟤🟫🇨🇴🇨🇷🇪🇹🇬🇹🇭🇳🫩😫🥱"
+   },
+   {
+    "q": "cat",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🐈😺😽🙀😿😾🐱🐈‍⬛😼😸😹😻"
+   },
+   {
+    "q": "heart",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "💖💗💓💞💕💟❣💔❤‍🩹❤🩷🧡"
+   },
+   {
+    "q": "birthday cake",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🎂🍰🧁🥳🥮🍥🍒🍓🦀🍍🥕🍢"
+   },
+   {
+    "q": "sunflower",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🌻"
+   },
+   {
+    "q": "book",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "📚📕📖📗📘📙🔖📔📑🈯🎒🧾"
+   },
+   {
+    "q": "key",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🔑🗝🔐⌨#⃣*⃣🍋‍🟩🎹0⃣1⃣2⃣3⃣"
+   },
+   {
+    "q": "sleeping face",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "😴😪🐨😀👼💤🛌🏕⛺🫠🫫😉"
+   },
+   {
+    "q": "money",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "💰🤑💸🧧💴💵💶💷💱🫰🪙🪎"
+   },
+   {
+    "q": "can't wait",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "😃🫷🫸🤚🖐✋☝🐢🚥🚦🛑⏲"
+   },
+   {
+    "q": "good luck",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      1,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": false,
+    "rr": 0.5,
+    "top": "🫡🤞🍀🐞🪬🎍🧧🧿🥠🎰💚🎲"
+   },
+   {
+    "q": "my bad",
+    "kind": "single",
+    "pass": false,
+    "first": [
+     null
+    ],
+    "decoy_before": null,
+    "top1": false,
+    "rr": 0.0,
+    "top": "🤭🙊🙇🙇‍♂🙇‍♀🪌🦡🏸🦹👎🦹‍♂🦹‍♀"
+   },
+   {
+    "q": "spill the tea",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      1,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": false,
+    "rr": 0.5,
+    "top": "🍵🫖👀💁💁‍♂💁‍♀🍿🫟🫗🛢🧋🧑‍🏫"
+   },
+   {
+    "q": "Monday mood",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "😩🙎😫🧑‍💼🧟🧟‍♂🧟‍♀🙎‍♂🙎‍♀🙍🙍‍♂🙍‍♀"
+   },
+   {
+    "q": "finally Friday",
+    "kind": "single",
+    "pass": false,
+    "first": [
+     null
+    ],
+    "decoy_before": null,
+    "top1": false,
+    "rr": 0.0,
+    "top": "😮‍💨🐈‍⬛🙌😌🦃🐟🍕🍺🍻🏬🕌🏈"
+   },
+   {
+    "q": "I have a crush",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🥰😍😻💘💗💓🩷💔💌🔥"
+   },
+   {
+    "q": "send help",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      1,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": false,
+    "rr": 0.5,
+    "top": "📩🆘📤🏤📠📮🏣🎇📲✉📧↪"
+   },
+   {
+    "q": "facepalm",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🤦🤦‍♂🤦‍♀"
+   },
+   {
+    "q": "fingers crossed",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🤞🫰😟🍀⚔🎌😵🔀⚒🤌🖕🖐"
+   },
+   {
+    "q": "break a leg",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🤞🦵⛓‍💥💔🔔⏯⏸🎱🫫🥪🍱☕"
+   },
+   {
+    "q": "cat in a box",
+    "kind": "multi",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ],
+     [
+      22,
+      2
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🐈🍱😺😽🙀😿😾🐱🐈‍⬛😼😸😹"
+   },
+   {
+    "q": "dog walking in the rain",
+    "kind": "multi",
+    "pass": true,
+    "first": [
+     [
+      3,
+      0
+     ],
+     [
+      0,
+      0
+     ],
+     [
+      4,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🚶🚶‍♂🚶‍♀🐕🌧🚶‍➡☔🐶🦮🐕‍🦺🌭🐩"
+   },
+   {
+    "q": "flight to Paris",
+    "kind": "multi",
+    "pass": true,
+    "first": [
+     [
+      5,
+      2
+     ],
+     [
+      3,
+      1
+     ]
+    ],
+    "decoy_before": null,
+    "top1": false,
+    "rr": 0.25,
+    "top": "🥐🪶🥖🇫🇷🪗✈🚁🧑‍✈👨‍✈👩‍✈🛩🛫"
+   },
+   {
+    "q": "baby sleeping",
+    "kind": "multi",
+    "pass": true,
+    "first": [
+     [
+      2,
+      0
+     ],
+     [
+      1,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": false,
+    "rr": 0.5,
+    "top": "👼😴👶😪💤🛌🐨🏕⛺🐤🍼🚼"
+   },
+   {
+    "q": "be right back, walking the dog",
+    "kind": "sentence",
+    "pass": true,
+    "first": [
+     [
+      45,
+      4
+     ],
+     [
+      4,
+      0
+     ],
+     [
+      3,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": false,
+    "rr": 0.25,
+    "top": "🚶‍➡🚶‍♀‍➡🚶‍♂‍➡🐕🚶🚧🔜↩🚶‍♂🚶‍♀↔🧑‍🦯‍➡"
+   },
+   {
+    "q": "camping with friends",
+    "kind": "multi",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ],
+     [
+      1,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🏕🧑‍🤝‍🧑⛺🥾🔦🚣🚣‍♂🚣‍♀🫎🐻🦟🌲"
+   },
+   {
+    "q": "hot tea and a book",
+    "kind": "multi",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ],
+     [
+      3,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🍵🫖☕📚🧋👀💁💁‍♂💁‍♀🧉🇱🇰🍃"
+   },
+   {
+    "q": "please call me",
+    "kind": "multi",
+    "pass": true,
+    "first": [
+     [
+      4,
+      1
+     ],
+     [
+      19,
+      2
+     ]
+    ],
+    "decoy_before": null,
+    "top1": false,
+    "rr": 0.2,
+    "top": "🛎🥺🤙🥹🙏🙇🙇‍♂🙇‍♀🧎🧎‍♂🧎‍♀🧎‍➡"
+   },
+   {
+    "q": "snow day, staying home",
+    "kind": "multi",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ],
+     [
+      3,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🌨⛄⛷🏠🏘🏂❄☃🎿🛷🥶👪"
+   },
+   {
+    "q": "pizza, beer, and football",
+    "kind": "multi",
+    "pass": true,
+    "first": [
+     [
+      1,
+      0
+     ],
+     [
+      0,
+      0
+     ],
+     [
+      2,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🍺🍕🏈🍄‍🟫🤤🧀🇮🇹🍍🍄🍅🫒🍻"
+   }
+  ],
+  "heldout_test": [
+   {
+    "q": "pizza",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🍕🍄‍🟫🤤🧀🇮🇹🍍🍄🍅🫒"
+   },
+   {
+    "q": "dog",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🐕🐶🦮🐕‍🦺🌭🐩🦴🐾🥺💩🚶🚶‍♂"
+   },
+   {
+    "q": "thumbs up",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "👍⬆👎🫹🫺🫰🪴🆙🫴☝🤲📄"
+   },
+   {
+    "q": "umbrella",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "☂🌂🏖⛱☔🍹🌧"
+   },
+   {
+    "q": "airplane",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "✈🛩🛫🛬🧑‍✈👨‍✈👩‍✈💺📵📴"
+   },
+   {
+    "q": "laptop",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "💻🧑‍💻👨‍💻👩‍💻⌨"
+   },
+   {
+    "q": "avocado",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🥑"
+   },
+   {
+    "q": "soccer ball",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "⚽🏟🍙🇧🇷🥅🟨🎊🔮🪩⛹⛹‍♂⛹‍♀"
+   },
+   {
+    "q": "fire",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🔥🚒🧯❤‍🔥🧑‍🚒🎆🧨👨‍🚒👩‍🚒🐲🆒🎇"
+   },
+   {
+    "q": "crying face",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "😢😭😿😀😪😩😂🤣😹🧅🫠🫫"
+   },
+   {
+    "q": "rose",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🌹🏵🍷🌿🇩🇲🥀🇧🇬🏴󠁧󠁢󠁥󠁮󠁧󠁿"
+   },
+   {
+    "q": "I'm exhausted",
+    "kind": "single",
+    "pass": false,
+    "first": [
+     [
+      8,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": false,
+    "rr": 0.1111111111111111,
+    "top": "😮‍💨🫩😫🫠😪😴😵😓😩💤🧟🧟‍♂"
+   },
+   {
+    "q": "that's awkward",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "😬😐😶😑😳🙃🫠🫥😕🫤😓🙈"
+   },
+   {
+    "q": "I'm dead",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      3,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": false,
+    "rr": 0.25,
+    "top": "😵🤣😂💀🧟🧟‍♂🧟‍♀😑🪾⚰🪦😳"
+   },
+   {
+    "q": "that was so cringe",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      2,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": false,
+    "rr": 0.3333333333333333,
+    "top": "😖🫠🫣😬🤮😳🙈🫦🤦🤦‍♂🤦‍♀"
+   },
+   {
+    "q": "plot twist",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🤯🪢➰➿🥨🌀🌪🔀"
+   },
+   {
+    "q": "touch grass",
+    "kind": "single",
+    "pass": false,
+    "first": [
+     null
+    ],
+    "decoy_before": null,
+    "top1": false,
+    "rr": 0.0,
+    "top": "🟩🤏🦗🤞🫆🦔🌵💄✉"
+   },
+   {
+    "q": "big yikes",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      3,
+      1
+     ]
+    ],
+    "decoy_before": null,
+    "top1": false,
+    "rr": 0.25,
+    "top": "😰😃😓😬😦😨😱🙀🙈🐯🐅🐆"
+   },
+   {
+    "q": "TGIF",
+    "kind": "single",
+    "pass": false,
+    "first": [
+     null
+    ],
+    "decoy_before": null,
+    "top1": false,
+    "rr": 0.0,
+    "top": ""
+   },
+   {
+    "q": "ghosted me",
+    "kind": "single",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "👻🧑‍🔧🧜‍♂🧜‍♀🍈🚇🪋🕎🧜📣📝🫠"
+   },
+   {
+    "q": "coffee and croissant",
+    "kind": "multi",
+    "pass": true,
+    "first": [
+     [
+      1,
+      0
+     ],
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🥐☕🧈🇫🇷🤎🟤🟫🇨🇴🇨🇷🇪🇹🇬🇹🇭🇳"
+   },
+   {
+    "q": "sun and beach",
+    "kind": "multi",
+    "pass": true,
+    "first": [
+     [
+      1,
+      0
+     ],
+     [
+      2,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": false,
+    "rr": 0.5,
+    "top": "🌞☀🏖⛱🕶🌅👒🇮🇨⛅🌤🌥🌦"
+   },
+   {
+    "q": "pizza movie night",
+    "kind": "multi",
+    "pass": true,
+    "first": [
+     [
+      3,
+      0
+     ],
+     [
+      4,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": false,
+    "rr": 0.25,
+    "top": "🎥🍿🎞🍕📽🎬🎦📀😨😱🍄‍🟫🤤"
+   },
+   {
+    "q": "happy birthday grandma",
+    "kind": "multi",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ],
+     [
+      3,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🎂🥳🎈👵🎉🎇👩‍🦳🧶♟🥧🎁💐"
+   },
+   {
+    "q": "I love you",
+    "kind": "multi",
+    "pass": true,
+    "first": [
+     [
+      11,
+      2
+     ],
+     [
+      15,
+      2
+     ]
+    ],
+    "decoy_before": null,
+    "top1": false,
+    "rr": 0.08333333333333333,
+    "top": "🧒🤟👦👧🌱👶📹😟👱🤴🌒🥰"
+   },
+   {
+    "q": "tacos and margaritas",
+    "kind": "multi",
+    "pass": true,
+    "first": [
+     [
+      1,
+      0
+     ],
+     [
+      2,
+      1
+     ]
+    ],
+    "decoy_before": null,
+    "top1": false,
+    "rr": 0.5,
+    "top": "🍋‍🟩🌮🍹🫓🇲🇽"
+   },
+   {
+    "q": "work laptop coffee",
+    "kind": "multi",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ],
+     [
+      3,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "💻🧑‍💻👨‍💻☕👷👩‍💻⌨🤎🟤🟫🇨🇴🇨🇷"
+   },
+   {
+    "q": "rainbow after the storm",
+    "kind": "multi",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ],
+     [
+      1,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🌈⛈🏳‍🌈🦄🌦🇿🇦🌩🌪🌬🌀🌂☂"
+   },
+   {
+    "q": "congrats on the new job",
+    "kind": "multi",
+    "pass": true,
+    "first": [
+     [
+      0,
+      0
+     ],
+     [
+      3,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "🎉㊗😟💼👔🔛👏🌟🥳🎆🎊🍾"
+   },
+   {
+    "q": "I miss you, mom",
+    "kind": "multi",
+    "pass": true,
+    "first": [
+     [
+      1,
+      0
+     ],
+     [
+      0,
+      0
+     ]
+    ],
+    "decoy_before": null,
+    "top1": true,
+    "rr": 1.0,
+    "top": "👩😢🤱😘😿👩‍🏫👑👩‍🍼👩‍👩‍👦👩‍👩‍👧👩‍👩‍👧‍👦👩‍👩‍👦‍👦"
+   }
+  ]
+ }
+}
