@@ -1,0 +1,1573 @@
+{
+ "version": 1,
+ "frozen": "2026-11-05",
+ "rules": {
+  "top_n": {
+   "single": 5,
+   "multi": 10,
+   "sentence": 12
+  },
+  "pass": "every group has a member within the first N cells in display order, and no decoy appears before the first acceptable emoji of any group"
+ },
+ "sources": {
+  "stories": [
+   {
+    "q": "american flag happy",
+    "kind": "multi",
+    "groups": [
+     [
+      "🇺🇸"
+     ],
+     [
+      "😀",
+      "😃",
+      "😄",
+      "😁",
+      "😊",
+      "🙂",
+      "☺️",
+      "🥳"
+     ]
+    ],
+    "decoys": [
+     "🇦🇸",
+     "🏈"
+    ]
+   },
+   {
+    "q": "my dog went to the vet and it isn't looking good, please pray for him",
+    "kind": "sentence",
+    "groups": [
+     [
+      "🐶",
+      "🐕",
+      "🦮",
+      "🐕‍🦺",
+      "🐩"
+     ],
+     [
+      "🏥",
+      "🩺",
+      "🚑"
+     ],
+     [
+      "🙏"
+     ]
+    ],
+    "decoys": [
+     "👍",
+     "😊",
+     "😎"
+    ]
+   }
+  ],
+  "personas": [
+   {
+    "q": "skull",
+    "kind": "single",
+    "groups": [
+     [
+      "💀",
+      "☠️"
+     ]
+    ],
+    "decoys": []
+   },
+   {
+    "q": "lol",
+    "kind": "single",
+    "groups": [
+     [
+      "😂",
+      "🤣"
+     ]
+    ],
+    "decoys": []
+   },
+   {
+    "q": "party",
+    "kind": "single",
+    "groups": [
+     [
+      "🎉",
+      "🥳",
+      "🎊"
+     ]
+    ],
+    "decoys": []
+   },
+   {
+    "q": "clap",
+    "kind": "single",
+    "groups": [
+     [
+      "👏"
+     ]
+    ],
+    "decoys": []
+   },
+   {
+    "q": "happy dog",
+    "kind": "multi",
+    "groups": [
+     [
+      "🐶",
+      "🐕",
+      "🦮",
+      "🐩"
+     ],
+     [
+      "😀",
+      "😃",
+      "😄",
+      "😁",
+      "😊",
+      "🙂"
+     ]
+    ],
+    "decoys": []
+   },
+   {
+    "q": "star",
+    "kind": "single",
+    "groups": [
+     [
+      "⭐",
+      "🌟",
+      "✨"
+     ]
+    ],
+    "decoys": []
+   },
+   {
+    "q": "check",
+    "kind": "single",
+    "groups": [
+     [
+      "✅",
+      "✔️",
+      "☑️"
+     ]
+    ],
+    "decoys": []
+   },
+   {
+    "q": "cake",
+    "kind": "single",
+    "groups": [
+     [
+      "🎂",
+      "🍰",
+      "🧁"
+     ]
+    ],
+    "decoys": []
+   },
+   {
+    "q": "birthday",
+    "kind": "single",
+    "groups": [
+     [
+      "🎂",
+      "🥳",
+      "🎉",
+      "🎁",
+      "🎈"
+     ]
+    ],
+    "decoys": []
+   },
+   {
+    "q": "tired but glad",
+    "kind": "multi",
+    "groups": [
+     [
+      "😪",
+      "😴",
+      "🥱",
+      "😩",
+      "😫"
+     ],
+     [
+      "😊",
+      "🙂",
+      "😌",
+      "😀"
+     ]
+    ],
+    "decoys": []
+   },
+   {
+    "q": "well done",
+    "kind": "single",
+    "groups": [
+     [
+      "👏",
+      "👍",
+      "🏆",
+      "🌟",
+      "🥇",
+      "🙌"
+     ]
+    ],
+    "decoys": []
+   },
+   {
+    "q": "puppy",
+    "kind": "single",
+    "groups": [
+     [
+      "🐶",
+      "🐕"
+     ]
+    ],
+    "decoys": []
+   },
+   {
+    "q": "praise",
+    "kind": "single",
+    "groups": [
+     [
+      "🙌",
+      "👏",
+      "🌟",
+      "🏆"
+     ]
+    ],
+    "decoys": []
+   },
+   {
+    "q": "tent fire",
+    "kind": "multi",
+    "groups": [
+     [
+      "⛺",
+      "🏕️"
+     ],
+     [
+      "🔥"
+     ]
+    ],
+    "decoys": []
+   },
+   {
+    "q": "camping",
+    "kind": "single",
+    "groups": [
+     [
+      "🏕️",
+      "⛺"
+     ]
+    ],
+    "decoys": []
+   },
+   {
+    "q": "dinner",
+    "kind": "single",
+    "groups": [
+     [
+      "🍽️",
+      "🍝",
+      "🍲",
+      "🥘"
+     ]
+    ],
+    "decoys": []
+   },
+   {
+    "q": "family",
+    "kind": "single",
+    "groups": [
+     [
+      "👪",
+      "👨‍👩‍👧",
+      "👨‍👩‍👧‍👦",
+      "👨‍👩‍👦"
+     ]
+    ],
+    "decoys": []
+   },
+   {
+    "q": "thumbs up",
+    "kind": "single",
+    "groups": [
+     [
+      "👍"
+     ]
+    ],
+    "decoys": []
+   },
+   {
+    "q": "ship it",
+    "kind": "single",
+    "groups": [
+     [
+      "🚀",
+      "🚢"
+     ]
+    ],
+    "decoys": []
+   },
+   {
+    "q": "reading",
+    "kind": "single",
+    "groups": [
+     [
+      "📖",
+      "📚"
+     ]
+    ],
+    "decoys": []
+   },
+   {
+    "q": "sleepy",
+    "kind": "single",
+    "groups": [
+     [
+      "😴",
+      "😪",
+      "🥱"
+     ]
+    ],
+    "decoys": []
+   },
+   {
+    "q": "sad",
+    "kind": "single",
+    "groups": [
+     [
+      "😢",
+      "😞",
+      "😔",
+      "☹️",
+      "🙁",
+      "😭"
+     ]
+    ],
+    "decoys": []
+   },
+   {
+    "q": "love",
+    "kind": "single",
+    "groups": [
+     [
+      "❤️",
+      "😍",
+      "🥰",
+      "💕"
+     ]
+    ],
+    "decoys": []
+   },
+   {
+    "q": "thanks",
+    "kind": "single",
+    "groups": [
+     [
+      "🙏"
+     ]
+    ],
+    "decoys": []
+   },
+   {
+    "q": "good luck",
+    "kind": "single",
+    "groups": [
+     [
+      "🤞",
+      "🍀"
+     ]
+    ],
+    "decoys": []
+   },
+   {
+    "q": "congrats",
+    "kind": "single",
+    "groups": [
+     [
+      "🎉",
+      "🥳",
+      "👏",
+      "🎊"
+     ]
+    ],
+    "decoys": []
+   },
+   {
+    "q": "rip",
+    "kind": "single",
+    "groups": [
+     [
+      "🪦",
+      "⚰️",
+      "💀"
+     ]
+    ],
+    "decoys": []
+   },
+   {
+    "q": "coffee",
+    "kind": "single",
+    "groups": [
+     [
+      "☕"
+     ]
+    ],
+    "decoys": []
+   },
+   {
+    "q": "beer",
+    "kind": "single",
+    "groups": [
+     [
+      "🍺",
+      "🍻"
+     ]
+    ],
+    "decoys": []
+   },
+   {
+    "q": "money",
+    "kind": "single",
+    "groups": [
+     [
+      "💰",
+      "💵",
+      "💸",
+      "🤑"
+     ]
+    ],
+    "decoys": []
+   },
+   {
+    "q": "eyes",
+    "kind": "single",
+    "groups": [
+     [
+      "👀"
+     ]
+    ],
+    "decoys": []
+   },
+   {
+    "q": "thinking",
+    "kind": "single",
+    "groups": [
+     [
+      "🤔"
+     ]
+    ],
+    "decoys": []
+   },
+   {
+    "q": "facepalm",
+    "kind": "single",
+    "groups": [
+     [
+      "🤦"
+     ]
+    ],
+    "decoys": []
+   },
+   {
+    "q": "shrug",
+    "kind": "single",
+    "groups": [
+     [
+      "🤷"
+     ]
+    ],
+    "decoys": []
+   },
+   {
+    "q": "wave",
+    "kind": "single",
+    "groups": [
+     [
+      "👋"
+     ]
+    ],
+    "decoys": []
+   },
+   {
+    "q": "hug",
+    "kind": "single",
+    "groups": [
+     [
+      "🤗",
+      "🫂"
+     ]
+    ],
+    "decoys": []
+   },
+   {
+    "q": "sick",
+    "kind": "single",
+    "groups": [
+     [
+      "🤒",
+      "🤢",
+      "🤧",
+      "😷"
+     ]
+    ],
+    "decoys": []
+   },
+   {
+    "q": "hospital",
+    "kind": "single",
+    "groups": [
+     [
+      "🏥"
+     ]
+    ],
+    "decoys": []
+   },
+   {
+    "q": "pray",
+    "kind": "single",
+    "groups": [
+     [
+      "🙏"
+     ]
+    ],
+    "decoys": []
+   },
+   {
+    "q": "church",
+    "kind": "single",
+    "groups": [
+     [
+      "⛪"
+     ]
+    ],
+    "decoys": []
+   },
+   {
+    "q": "usa",
+    "kind": "single",
+    "groups": [
+     [
+      "🇺🇸"
+     ]
+    ],
+    "decoys": []
+   },
+   {
+    "q": "pizza",
+    "kind": "single",
+    "groups": [
+     [
+      "🍕"
+     ]
+    ],
+    "decoys": []
+   },
+   {
+    "q": "cool",
+    "kind": "single",
+    "groups": [
+     [
+      "😎",
+      "🆒"
+     ]
+    ],
+    "decoys": []
+   },
+   {
+    "q": "angry",
+    "kind": "single",
+    "groups": [
+     [
+      "😠",
+      "😡",
+      "🤬"
+     ]
+    ],
+    "decoys": []
+   },
+   {
+    "q": "scared",
+    "kind": "single",
+    "groups": [
+     [
+      "😨",
+      "😱",
+      "😰"
+     ]
+    ],
+    "decoys": []
+   },
+   {
+    "q": "music",
+    "kind": "single",
+    "groups": [
+     [
+      "🎵",
+      "🎶"
+     ]
+    ],
+    "decoys": []
+   },
+   {
+    "q": "bug",
+    "kind": "single",
+    "groups": [
+     [
+      "🐛",
+      "🐞",
+      "🪲"
+     ]
+    ],
+    "decoys": []
+   },
+   {
+    "q": "warning",
+    "kind": "single",
+    "groups": [
+     [
+      "⚠️"
+     ]
+    ],
+    "decoys": []
+   },
+   {
+    "q": "sleepy cat",
+    "kind": "multi",
+    "groups": [
+     [
+      "😴",
+      "😪",
+      "💤"
+     ],
+     [
+      "🐱",
+      "🐈"
+     ]
+    ],
+    "decoys": []
+   },
+   {
+    "q": "pizza and beer",
+    "kind": "multi",
+    "groups": [
+     [
+      "🍕"
+     ],
+     [
+      "🍺",
+      "🍻"
+     ]
+    ],
+    "decoys": []
+   }
+  ],
+  "shortcodes": [
+   {
+    "q": ":fire",
+    "kind": "single",
+    "groups": [
+     [
+      "🔥"
+     ]
+    ],
+    "decoys": []
+   },
+   {
+    "q": ":thumbsup",
+    "kind": "single",
+    "groups": [
+     [
+      "👍"
+     ]
+    ],
+    "decoys": []
+   },
+   {
+    "q": ":joy",
+    "kind": "single",
+    "groups": [
+     [
+      "😂"
+     ]
+    ],
+    "decoys": []
+   },
+   {
+    "q": ":tada",
+    "kind": "single",
+    "groups": [
+     [
+      "🎉"
+     ]
+    ],
+    "decoys": []
+   },
+   {
+    "q": ":heart_eyes",
+    "kind": "single",
+    "groups": [
+     [
+      "😍"
+     ]
+    ],
+    "decoys": []
+   }
+  ],
+  "heldout_tune": [
+   {
+    "q": "coffee",
+    "kind": "single",
+    "groups": [
+     [
+      "☕"
+     ]
+    ],
+    "decoys": []
+   },
+   {
+    "q": "cat",
+    "kind": "single",
+    "groups": [
+     [
+      "🐈",
+      "🐈‍⬛"
+     ]
+    ],
+    "decoys": []
+   },
+   {
+    "q": "heart",
+    "kind": "single",
+    "groups": [
+     [
+      "❤️",
+      "💖",
+      "💕"
+     ]
+    ],
+    "decoys": [
+     "💔"
+    ]
+   },
+   {
+    "q": "birthday cake",
+    "kind": "single",
+    "groups": [
+     [
+      "🎂"
+     ]
+    ],
+    "decoys": [
+     "🍰"
+    ]
+   },
+   {
+    "q": "sunflower",
+    "kind": "single",
+    "groups": [
+     [
+      "🌻"
+     ]
+    ],
+    "decoys": [
+     "🌼"
+    ]
+   },
+   {
+    "q": "book",
+    "kind": "single",
+    "groups": [
+     [
+      "📖",
+      "📚"
+     ]
+    ],
+    "decoys": [
+     "📕"
+    ]
+   },
+   {
+    "q": "key",
+    "kind": "single",
+    "groups": [
+     [
+      "🔑",
+      "🗝️"
+     ]
+    ],
+    "decoys": []
+   },
+   {
+    "q": "sleeping face",
+    "kind": "single",
+    "groups": [
+     [
+      "😴"
+     ]
+    ],
+    "decoys": [
+     "😪"
+    ]
+   },
+   {
+    "q": "money",
+    "kind": "single",
+    "groups": [
+     [
+      "💵",
+      "💰"
+     ]
+    ],
+    "decoys": [
+     "💸"
+    ]
+   },
+   {
+    "q": "can't wait",
+    "kind": "single",
+    "groups": [
+     [
+      "🤩",
+      "😃"
+     ]
+    ],
+    "decoys": [
+     "😴"
+    ]
+   },
+   {
+    "q": "good luck",
+    "kind": "single",
+    "groups": [
+     [
+      "🤞"
+     ]
+    ],
+    "decoys": [
+     "🍀"
+    ]
+   },
+   {
+    "q": "my bad",
+    "kind": "single",
+    "groups": [
+     [
+      "🙏",
+      "😅"
+     ]
+    ],
+    "decoys": [
+     "😡"
+    ]
+   },
+   {
+    "q": "spill the tea",
+    "kind": "single",
+    "groups": [
+     [
+      "🫖",
+      "☕"
+     ]
+    ],
+    "decoys": [
+     "🫗"
+    ]
+   },
+   {
+    "q": "Monday mood",
+    "kind": "single",
+    "groups": [
+     [
+      "😩",
+      "😫"
+     ]
+    ],
+    "decoys": [
+     "🥳"
+    ]
+   },
+   {
+    "q": "finally Friday",
+    "kind": "single",
+    "groups": [
+     [
+      "🥳",
+      "🎉"
+     ]
+    ],
+    "decoys": [
+     "😴"
+    ]
+   },
+   {
+    "q": "I have a crush",
+    "kind": "single",
+    "groups": [
+     [
+      "😍",
+      "🥰"
+     ]
+    ],
+    "decoys": [
+     "😡"
+    ]
+   },
+   {
+    "q": "send help",
+    "kind": "single",
+    "groups": [
+     [
+      "🆘",
+      "🙋"
+     ]
+    ],
+    "decoys": [
+     "🎉"
+    ]
+   },
+   {
+    "q": "facepalm",
+    "kind": "single",
+    "groups": [
+     [
+      "🤦"
+     ]
+    ],
+    "decoys": [
+     "👏"
+    ]
+   },
+   {
+    "q": "fingers crossed",
+    "kind": "single",
+    "groups": [
+     [
+      "🤞"
+     ]
+    ],
+    "decoys": [
+     "✌️"
+    ]
+   },
+   {
+    "q": "break a leg",
+    "kind": "single",
+    "groups": [
+     [
+      "🍀",
+      "🤞"
+     ]
+    ],
+    "decoys": [
+     "🦵"
+    ]
+   },
+   {
+    "q": "cat in a box",
+    "kind": "multi",
+    "groups": [
+     [
+      "🐈",
+      "🐱"
+     ],
+     [
+      "📦"
+     ]
+    ],
+    "decoys": [
+     "🐕"
+    ]
+   },
+   {
+    "q": "dog walking in the rain",
+    "kind": "multi",
+    "groups": [
+     [
+      "🐕",
+      "🐶"
+     ],
+     [
+      "🚶"
+     ],
+     [
+      "🌧️",
+      "☔"
+     ]
+    ],
+    "decoys": [
+     "🐈"
+    ]
+   },
+   {
+    "q": "flight to Paris",
+    "kind": "multi",
+    "groups": [
+     [
+      "✈️"
+     ],
+     [
+      "🇫🇷"
+     ]
+    ],
+    "decoys": [
+     "🚗"
+    ]
+   },
+   {
+    "q": "baby sleeping",
+    "kind": "multi",
+    "groups": [
+     [
+      "👶"
+     ],
+     [
+      "😴",
+      "🛌"
+     ]
+    ],
+    "decoys": [
+     "😭"
+    ]
+   },
+   {
+    "q": "be right back, walking the dog",
+    "kind": "sentence",
+    "groups": [
+     [
+      "🔙",
+      "⏳"
+     ],
+     [
+      "🚶"
+     ],
+     [
+      "🐕",
+      "🐶"
+     ]
+    ],
+    "decoys": [
+     "🐈"
+    ]
+   },
+   {
+    "q": "camping with friends",
+    "kind": "multi",
+    "groups": [
+     [
+      "🏕️",
+      "⛺"
+     ],
+     [
+      "🧑‍🤝‍🧑",
+      "👯"
+     ]
+    ],
+    "decoys": [
+     "🏢"
+    ]
+   },
+   {
+    "q": "hot tea and a book",
+    "kind": "multi",
+    "groups": [
+     [
+      "🍵",
+      "☕"
+     ],
+     [
+      "📖",
+      "📚"
+     ]
+    ],
+    "decoys": [
+     "🍺"
+    ]
+   },
+   {
+    "q": "please call me",
+    "kind": "multi",
+    "groups": [
+     [
+      "🙏"
+     ],
+     [
+      "📞",
+      "📱"
+     ]
+    ],
+    "decoys": [
+     "📵"
+    ]
+   },
+   {
+    "q": "snow day, staying home",
+    "kind": "multi",
+    "groups": [
+     [
+      "❄️",
+      "🌨️"
+     ],
+     [
+      "🏠"
+     ]
+    ],
+    "decoys": [
+     "🏖️"
+    ]
+   },
+   {
+    "q": "pizza, beer, and football",
+    "kind": "multi",
+    "groups": [
+     [
+      "🍕"
+     ],
+     [
+      "🍺"
+     ],
+     [
+      "🏈"
+     ]
+    ],
+    "decoys": [
+     "⚽"
+    ]
+   }
+  ],
+  "heldout_test": [
+   {
+    "q": "pizza",
+    "kind": "single",
+    "groups": [
+     [
+      "🍕"
+     ]
+    ],
+    "decoys": []
+   },
+   {
+    "q": "dog",
+    "kind": "single",
+    "groups": [
+     [
+      "🐕",
+      "🐶"
+     ]
+    ],
+    "decoys": []
+   },
+   {
+    "q": "thumbs up",
+    "kind": "single",
+    "groups": [
+     [
+      "👍"
+     ]
+    ],
+    "decoys": [
+     "👎"
+    ]
+   },
+   {
+    "q": "umbrella",
+    "kind": "single",
+    "groups": [
+     [
+      "☂️",
+      "☔"
+     ]
+    ],
+    "decoys": []
+   },
+   {
+    "q": "airplane",
+    "kind": "single",
+    "groups": [
+     [
+      "✈️"
+     ]
+    ],
+    "decoys": [
+     "🛩️"
+    ]
+   },
+   {
+    "q": "laptop",
+    "kind": "single",
+    "groups": [
+     [
+      "💻"
+     ]
+    ],
+    "decoys": [
+     "📱"
+    ]
+   },
+   {
+    "q": "avocado",
+    "kind": "single",
+    "groups": [
+     [
+      "🥑"
+     ]
+    ],
+    "decoys": []
+   },
+   {
+    "q": "soccer ball",
+    "kind": "single",
+    "groups": [
+     [
+      "⚽"
+     ]
+    ],
+    "decoys": [
+     "🏈"
+    ]
+   },
+   {
+    "q": "fire",
+    "kind": "single",
+    "groups": [
+     [
+      "🔥"
+     ]
+    ],
+    "decoys": [
+     "🚒"
+    ]
+   },
+   {
+    "q": "crying face",
+    "kind": "single",
+    "groups": [
+     [
+      "😢",
+      "😭"
+     ]
+    ],
+    "decoys": [
+     "😂"
+    ]
+   },
+   {
+    "q": "rose",
+    "kind": "single",
+    "groups": [
+     [
+      "🌹"
+     ]
+    ],
+    "decoys": [
+     "🥀"
+    ]
+   },
+   {
+    "q": "I'm exhausted",
+    "kind": "single",
+    "groups": [
+     [
+      "😩",
+      "🥱"
+     ]
+    ],
+    "decoys": [
+     "😎"
+    ]
+   },
+   {
+    "q": "that's awkward",
+    "kind": "single",
+    "groups": [
+     [
+      "😬"
+     ]
+    ],
+    "decoys": [
+     "😏"
+    ]
+   },
+   {
+    "q": "I'm dead",
+    "kind": "single",
+    "groups": [
+     [
+      "💀",
+      "☠️"
+     ]
+    ],
+    "decoys": [
+     "😇"
+    ]
+   },
+   {
+    "q": "that was so cringe",
+    "kind": "single",
+    "groups": [
+     [
+      "😬",
+      "🫣"
+     ]
+    ],
+    "decoys": [
+     "😂"
+    ]
+   },
+   {
+    "q": "plot twist",
+    "kind": "single",
+    "groups": [
+     [
+      "😲",
+      "🤯"
+     ]
+    ],
+    "decoys": [
+     "😴"
+    ]
+   },
+   {
+    "q": "touch grass",
+    "kind": "single",
+    "groups": [
+     [
+      "🌱",
+      "🌿"
+     ]
+    ],
+    "decoys": [
+     "🖥️"
+    ]
+   },
+   {
+    "q": "big yikes",
+    "kind": "single",
+    "groups": [
+     [
+      "😬",
+      "😳"
+     ]
+    ],
+    "decoys": [
+     "😎"
+    ]
+   },
+   {
+    "q": "TGIF",
+    "kind": "single",
+    "groups": [
+     [
+      "🥳",
+      "🎉"
+     ]
+    ],
+    "decoys": [
+     "😩"
+    ]
+   },
+   {
+    "q": "ghosted me",
+    "kind": "single",
+    "groups": [
+     [
+      "👻"
+     ]
+    ],
+    "decoys": [
+     "📵"
+    ]
+   },
+   {
+    "q": "coffee and croissant",
+    "kind": "multi",
+    "groups": [
+     [
+      "☕"
+     ],
+     [
+      "🥐"
+     ]
+    ],
+    "decoys": [
+     "🍵"
+    ]
+   },
+   {
+    "q": "sun and beach",
+    "kind": "multi",
+    "groups": [
+     [
+      "☀️"
+     ],
+     [
+      "🏖️",
+      "🌊"
+     ]
+    ],
+    "decoys": [
+     "🌙"
+    ]
+   },
+   {
+    "q": "pizza movie night",
+    "kind": "multi",
+    "groups": [
+     [
+      "🍕"
+     ],
+     [
+      "🎬",
+      "📽️"
+     ]
+    ],
+    "decoys": [
+     "🎂"
+    ]
+   },
+   {
+    "q": "happy birthday grandma",
+    "kind": "multi",
+    "groups": [
+     [
+      "🎂",
+      "🎉"
+     ],
+     [
+      "👵"
+     ]
+    ],
+    "decoys": [
+     "👶"
+    ]
+   },
+   {
+    "q": "I love you",
+    "kind": "multi",
+    "groups": [
+     [
+      "❤️",
+      "🥰"
+     ],
+     [
+      "🫶"
+     ]
+    ],
+    "decoys": [
+     "💔"
+    ]
+   },
+   {
+    "q": "tacos and margaritas",
+    "kind": "multi",
+    "groups": [
+     [
+      "🌮"
+     ],
+     [
+      "🍹",
+      "🍸"
+     ]
+    ],
+    "decoys": [
+     "🍕"
+    ]
+   },
+   {
+    "q": "work laptop coffee",
+    "kind": "multi",
+    "groups": [
+     [
+      "💻"
+     ],
+     [
+      "☕"
+     ]
+    ],
+    "decoys": [
+     "🎮"
+    ]
+   },
+   {
+    "q": "rainbow after the storm",
+    "kind": "multi",
+    "groups": [
+     [
+      "🌈"
+     ],
+     [
+      "🌧️",
+      "⛈️"
+     ]
+    ],
+    "decoys": [
+     "☀️"
+    ]
+   },
+   {
+    "q": "congrats on the new job",
+    "kind": "multi",
+    "groups": [
+     [
+      "🎉",
+      "👏"
+     ],
+     [
+      "💼"
+     ]
+    ],
+    "decoys": [
+     "😢"
+    ]
+   },
+   {
+    "q": "I miss you, mom",
+    "kind": "multi",
+    "groups": [
+     [
+      "🥺",
+      "😢"
+     ],
+     [
+      "👩",
+      "👩‍🦰"
+     ]
+    ],
+    "decoys": [
+     "😡"
+    ]
+   }
+  ]
+ },
+ "noise": {
+  "stopwords": [
+   "the",
+   "and",
+   "so the",
+   "and then",
+   "it is",
+   "a",
+   "of the",
+   "to be",
+   "we",
+   "is it"
+  ],
+  "gibberish": [
+   "asdfgh",
+   "qzxv",
+   "xkcdq",
+   "zzzzzz",
+   "lkjhg",
+   "qwrtp",
+   "bnmvc",
+   "plmokn",
+   "jjjjj",
+   "wxqzf"
+  ]
+ },
+ "heldout": {
+  "written_by": "Codex gpt-6-luna, blind, 2026-11-05, prompt in review-loop/prototype/heldout-prompt.txt",
+  "split_seed": 20261105,
+  "edits": []
+ }
+}

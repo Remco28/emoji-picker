@@ -1,0 +1,13 @@
+You are helping build a test set for an emoji search box on a desktop computer. You will not see the search engine; write the test set from your own knowledge of how people look for emoji.
+
+Write 60 realistic things people type into an emoji search box, as varied as real use:
+- about 20 plain everyday words or names (e.g. objects, animals, foods, gestures),
+- about 20 indirect ones: situations, feelings, slang, nicknames, occasions (things where the word is not the emoji's official name),
+- about 20 multi-concept ones: two or three words naming different things, or a short sentence of the kind someone would paste.
+
+For each query, give the emoji a person would accept as a good result:
+- "groups": a list of groups; each group lists 1 to 6 interchangeable emoji, and the query is satisfied only when every group is represented (one group for a single idea, several groups for a multi-concept query).
+- "decoys": optional emoji that a lazy matcher might wrongly rank first and a person would NOT want (empty list if none).
+
+Use only standard Unicode emoji (no custom ones). Do not explain. Output only a JSON array, nothing before or after it:
+[{"q": "...", "groups": [["..."]], "decoys": []}, ...]
