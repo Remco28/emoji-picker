@@ -123,7 +123,7 @@ const CONFIG = {
   roundId: "round-2026-11-05-prototype",
   title: "The first real emoji picker: try it for a day",
   testUrl: "",
-  testedCommit: "TESTED_COMMIT",
+  testedCommit: "2d81774",
   intro: "This is the working prototype: search by meaning, recents, skin tones, and insertion straight into the app you were typing in. It runs on its own shortcut, Ctrl+Alt+E, beside your usual Super+. picker. In a terminal: cd into the repo, git pull, then follow the steps. Nothing here uploads anything. If something goes wrong, ./uninstall.sh removes only what the installer added (your original settings are also backed up in ~/.local/state/emoji-picker/backup). Logs that help me most: ~/.local/state/emoji-picker/picker.log and engine.log.",
   scenarios: [
     { id: "0-tests", title: "0. Quick self-check (optional, 1 minute)", why: "Confirms the search and the insertion logic work on your Python 3.14 and IBus 1.5.34 before anything is installed. It uses its own private IBus; your settings are untouched.", try: "Run: python3 -m unittest discover -s tests -t .  Paste the last few lines (it should say OK)." },
