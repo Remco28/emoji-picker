@@ -1,6 +1,6 @@
 import unittest
 
-from emoji_picker.nav import Grid
+from emoji_picker.nav import Grid, Pointer
 
 
 class GridTest(unittest.TestCase):
@@ -30,6 +30,29 @@ class GridTest(unittest.TestCase):
 
     def test_empty(self):
         self.assertIsNone(Grid([], 3).move(None, "down"))
+
+
+
+class PointerTest(unittest.TestCase):
+    def test_still_pointer_is_not_a_move(self):
+        p = Pointer()
+        p.enter(100, 80)                      # window opened under the mouse
+        self.assertFalse(p.motion(100, 80))   # chart rebuilt, GTK repeats the position
+        self.assertFalse(p.motion(100.2, 80))
+        self.assertTrue(p.motion(130, 80))    # the user moved the mouse
+
+    def test_motion_without_enter_is_not_a_move(self):
+        p = Pointer()
+        self.assertFalse(p.motion(10, 10))
+        self.assertTrue(p.motion(40, 10))
+
+    def test_leave_forgets_the_position(self):
+        p = Pointer()
+        p.enter(0, 0)
+        p.motion(50, 50)
+        p.leave()
+        self.assertFalse(p.moved)
+        self.assertFalse(p.motion(50, 50))
 
 
 if __name__ == "__main__":

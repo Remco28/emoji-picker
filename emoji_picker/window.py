@@ -12,7 +12,7 @@ from gi.repository import Adw, Gdk, GLib, Gtk  # noqa: E402
 
 from . import design, insert  # noqa: E402
 from .layout import SIDE_PADDING, columns  # noqa: E402
-from .nav import Grid  # noqa: E402
+from .nav import Grid, Pointer  # noqa: E402
 from .search import Section  # noqa: E402
 
 TONE_NAMES = {1: "light", 2: "medium-light", 3: "medium", 4: "medium-dark", 5: "dark"}
@@ -131,6 +131,15 @@ class PickerWindow(Adw.ApplicationWindow):
         view.add_top_bar(header)
         view.set_content(body)
         self.set_content(view)
+
+        # window-level pointer tracking runs before the cells' hover handlers
+        self.pointer = Pointer()
+        moves = Gtk.EventControllerMotion()
+        moves.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
+        moves.connect("enter", lambda _c, x, y: self.pointer.enter(x, y))
+        moves.connect("motion", lambda _c, x, y: self.pointer.motion(x, y))
+        moves.connect("leave", lambda _c: self.pointer.leave())
+        self.add_controller(moves)
 
         keys = Gtk.EventControllerKey()
         keys.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
@@ -324,6 +333,8 @@ class PickerWindow(Adw.ApplicationWindow):
         self._show_results(self.entry.get_text())
 
     def _on_motion(self, _ctrl, x, y, fb):
+        if not self.pointer.moved:   # the chart moved under a still mouse
+            return
         child = fb.get_child_at_pos(x, y)
         if child is None:
             return

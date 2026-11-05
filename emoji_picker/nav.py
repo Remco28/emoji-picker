@@ -62,3 +62,36 @@ class Grid:
         if key == "end":
             return len(self.cells) - 1
         return cur
+
+
+class Pointer:
+    """Tells real mouse movement from the motion events GTK sends when the
+    chart changes under a pointer that is standing still.
+
+    A rebuilt or scrolled chart, or a highlight that changes a cell's style,
+    can make GTK report "motion" at the same window position. Treating that
+    as hover would pull the highlight back under the mouse after every arrow
+    key. Positions are in window coordinates, so they stay comparable while
+    the cells underneath change.
+    """
+
+    def __init__(self, tolerance=0.5):
+        self.pos = None
+        self.tolerance = tolerance
+        self.moved = False
+
+    def enter(self, x, y):
+        # the window opened, or content slid, under the pointer: not a move
+        self.pos, self.moved = (x, y), False
+
+    def motion(self, x, y):
+        if self.pos is None:
+            self.moved = False
+        else:
+            self.moved = (abs(x - self.pos[0]) > self.tolerance
+                          or abs(y - self.pos[1]) > self.tolerance)
+        self.pos = (x, y)
+        return self.moved
+
+    def leave(self):
+        self.pos, self.moved = None, False
