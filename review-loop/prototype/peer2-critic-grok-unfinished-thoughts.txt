@@ -1,0 +1,1139 @@
+I am reviewing the plan as a senior Linux desktop engineer.I am reviewing the plan against GTK 4, libadwaita, IBus, and GNOME Wayland constraints.
+
+The plan proposes placing the IBus engine as the first input source. This conflicts with PROBLEM.md, which states the engine spawns only when it becomes the global engine upon selection.
+
+GNOME may not automatically activate the first input source. The plan relies on `ibus engine` to select it, but avoids restarting IBus to prevent breaking Super+ shortcuts. A passive engine that passes all keys through might not correctly intercept Wayland events when selected as the active source.
+
+The probe confirmed that a passive engine does not interfere with the US layout. However, `ibus engine` may be overridden by GNOME, which could prevent the engine from spawning as the global engine.
+
+GNOME Shell may override `ibus engine` with gsettings values. The logout fallback is acceptable. A new concern is whether the custom Ctrl+Alt+E shortcut launches a process that receives focus and an activation token on Wayland.
+
+The probe confirmed that custom shortcuts launch a new process and take focus. This validates the plan's choice of a new process over reusing an existing window on Wayland.
+
+A potential issue with `GTK_IM_MODULE` is noted: the value `gtk-im-context-simple` may be incorrect, as standard GTK IM modules are typically `ibus`, `simple`, `xim`, or `wayland`.
+
+The GTK IM module name is `simple`, not `gtk-im-context-simple`. The class name differs from the registered module name.
+
+On Wayland, GTK 4 uses the text-input protocol by default via `GtkIMContextWayland` or the `wayland` IM module. It does not respect the `GTK_IM_MODULE` environment variable in the same way as X11. This is a critical architectural change that undermines the plan's reliance on setting `GTK_IM_MODULE=simple`.
+
+Setting `GTK_IM_MODULE=simple` will not disable IBus on Wayland. The compositor provides the text-input protocol directly, and GTK 4's Wayland backend automatically defaults to `gtk_im_context_wayland` when the variable is unset.
+
+Re-examining GTK source confirms that `GTK_IM_MODULE` is checked before the Wayland default. Setting it to `simple` should override the Wayland IM context and disable input methods on Wayland. This contradicts the earlier assumption that the variable is ignored.
+
+The plan sets `GTK_IM_MODULE` to `gtk-im-context-simple`. This is not a valid GTK IM module name. If the name does not match a loaded module, GTK falls back to its default. On Wayland that default is `wayland`, which would still route input through the text-input protocol and reach IBus.
+
+If the picker uses the Wayland text input protocol, IBus would treat its search box as a real input context. Focus would shift to the picker and commits could land there. The generation counting logic would be confused by this focus change.
+
+The probe engine forwards every key through. Typing in the picker search box would still work even if IBus commits preedit into it.
+
+The generation logic might still commit correctly even if IBus sees the picker. After the picker hides, a new focus_in on the previous app would raise the generation above the picker's g0. The plan waits for this higher generation before committing. But if the picker is an IBus client, hiding it triggers a focus_out and focus_in on the app.
+
+A hidden picker process might still hold an active Wayland text input during the 150ms poll, causing focus to bounce or input to repeat. The passive engine could also consume keys or interfere with search box handling.
+
+The probe only tested clicking the picker while the engine was selected. It never tested typing into a GTK window that is also an IBus client while the custom engine is active.
+
+I will check the local GTK installation for the exact IM module name, since network access is unavailable.
+
+The `gtk-im-module` property expects module IDs such as `simple`, not `gtk-im-context-simple`. Setting the latter causes a GTK warning and forces a fallback to the default Wayland module. On Wayland this reconnects IBus through the compositor, which is a concrete bug in the plan.
+
+The plan's insertion logic might still function, but the stated invariant that a commit cannot land in the search box would be violated. The probe engine's source code must be examined to confirm whether it properly forwards keys or swallows them when focused.
+
+The probe confirmed the picker hides and commits after a fixed 150 ms delay. It never used generation counting. If simple IM works, the engine routes to a fake context, the picker reads g0 after showing, and the plan's generation logic still holds.
+
+The picker is not an IBus input method client. While it remains open, the engine stays on the fake context. This means the generation counter is already incremented by the picker's focus events before the user types. The plan reads g0 at Enter time, so it captures this pre-incremented value. If the app gains focus before the 150 ms delay expires, a subsequent focus change could reset the 30 ms quiet window and cause a commit to land in the wrong context.
+
+A concrete failure path exists. If the picker hides and the compositor briefly returns focus to the fake context before the app regains focus, the generation counter already exceeds g0. The plan would commit to that fake context, silently dropping the emoji while still counting it as a successful commit.
+
+The plan assumes that hiding the picker forces a real app to take focus. This inference is wrong because the fake context also sends focus_in events, which would increment the generation counter without any real application gaining focus.
+
+The plan treats any generation increase as a real app, even though it previously noted that the fake context's focus behavior was unestablished. IBus input contexts may expose distinguishing metadata such as client name, capabilities, or content type. The engine proxy or bus input context could reveal whether the current focus belongs to the fake context.
+
+The IBus daemon creates the fake context with the name "fake". The engine can check its own name to distinguish the fake context from a real application.
+
+The IBus Python engine API probably does not expose the input context name directly. `focus_in` may not carry that metadata, so distinguishing the fake context from a real application would require checking `self.props` or D-Bus. The fake context might also have zero capabilities, unlike real GTK apps.
+
+The plan logs input context capabilities but never uses them to distinguish the fake context from a real application. The prototype probe succeeded with a fixed 150 ms delay, so the stricter generation-based logic might still work if timing matches the probe.
+
+The probe succeeded because the real application already held focus at the 150 ms mark. The generation counter would then rise above the picker's pre-hide value once the app gained focus after hiding. If the engine reads g0 before the picker hides, and the fake context remains focused throughout, the subsequent app focus_in increments the generation and the commit logic still works.
+
+The probe's successful commit at 150 ms confirms the real application held focus by that point. The generation counter therefore rose above the picker's pre-hide value, validating the plan's invariant for this measured case. The false-positive risk of committing to the fake context only arises if a spurious focus event occurs and the 150 ms delay elapses before the real application regains focus.
+
+The spurious focus case would require timing that differs from the probe. This is a possible medium risk rather than a definite high failure. The plan treats generation above g0 as proof that a real application took focus, but this is incorrect because the fake context also sends focus_in events. Generation counting is therefore a weak proxy.
+
+The probe engine code needs closer inspection.
+
+The engine's XML layout tag is set to `us`. Frank uses US keyboard input, so this matches his setup. Adding the engine as the first input source would replace the xkb source. The engine must therefore implement the layout itself.
+
+The probe confirmed that typing works when the custom engine is active. Super+Space switches input sources correctly, and the plan keeps other sources after it.
+
+GNOME 50 uses IBus even for simple xkb layouts. The default IBus engine handles Super+., so selecting the custom engine would disable that shortcut until the user switches back. The plan defers replacing Super+. to a later stage.
+
+The plan's test round explicitly includes verifying that Shift, Ctrl+C, and Ctrl+V still work while the custom engine is selected. The probe confirmed that typing remains unaffected, so the engine must forward all modifier keys.
+
+The plan correctly avoids restarting IBus, which would break Super+.. The running daemon may not see the new engine after writing to `/usr/share/ibus/component` and calling `ibus write-cache`. It typically requires a restart or SIGHUP to rescan the registry.
+
+If `ibus list-engine` shows the new engine but the running daemon has not yet loaded it, `ibus engine emoji-picker` will silently fail or no-op. The user would then see the engine active while insertion silently falls back to the clipboard. This would be caught during the test round.
+
+The custom shortcut Ctrl+Alt+E may conflict with an existing ThinkPad shortcut. The plan warns if the key is already taken. This is a low risk.
+
+GNOME custom keybindings launch without a terminal. The picker command must therefore be a full path to a Python module or a script that handles display initialization.
+
+The plan does not specify the exact command line for the Ctrl+Alt+E shortcut. It must invoke the correct Python interpreter with GTK bindings and set the working directory and PYTHONPATH so the picker can import its modules.
+
+The plan assumes that Noto Color Emoji covers every standard Unicode sequence for a given version. This may be incorrect because Noto version numbers do not always align perfectly with Unicode releases. A version cutoff based on this assumption could therefore hide newer emoji that are actually present in the font.
+
+The plan claims the development machine's Noto 2.047 stops at Unicode 15.1, but PROBLEM.md only states that Noto is the emoji font without giving a version. This claim should be verified locally on Ubuntu 24.04.
+
+Fontconfig's charset output lists individual Unicode code points rather than sequences. Emoji ZWJ sequences and flags are not separate entries in that list.
+
+The plan infers version cutoffs from single-code-point font coverage. A font might include all single-code-point emoji of a given Unicode version while still missing some ZWJ sequences, which would render as tofu. The plan assumes Noto ships every RGI sequence for each supported version, but this is not guaranteed for every point release.
+
+The font coverage algorithm has a flaw. If a newer Unicode version adds only ZWJ sequences or flags and no new single-code-point emoji, the font may still appear to support that version because it contains all older single-code-point emoji. This would cause the picker to incorrectly assume the font covers the newer version and hide valid emoji.
+
+The algorithm is more fragile than it first appeared. A font might include the code points for a newer Unicode version's single-code-point emoji purely as ordinary text characters or components, not as actual emoji. This would falsely signal support for that version and cause the picker to hide valid emoji. Regional indicator symbols have been in fonts since emoji 1.0, so flags are not a new concern.
+
+The font coverage algorithm is more robust than it first appeared. Regional indicators are present in the font's cmap, so fc-query charset correctly signals their presence. New flags are combinations of existing regional indicators, and flag support depends on the GSUB liga table rather than cmap. If the version cutoff is accurate, hiding emoji newer than the detected version correctly suppresses new flags while preserving older ones.
+
+A concrete bug in the version-cutoff logic is now clear. If Unicode 15.1 introduced only ZWJ sequences and no new single-code-point emoji, the font would still appear to support that version because all older singles are present. The picker would then incorrectly assume the font covers 15.1 and display ZWJ sequences it cannot actually render.
+
+Unicode 15.1 likely introduced only ZWJ sequences and modified existing emoji, with no new single-code-point emoji. This would confirm the version-cutoff algorithm's flaw: the font would appear to support the version even though it cannot render those sequences.
+
+Unicode 15.1 introduced no new single-code-point emoji. All 118 additions were ZWJ or tag sequences. The font coverage algorithm would therefore skip version 15.0 and proceed to check version 16.0.
+
+Ubuntu 26.04 likely ships Noto covering Unicode 18, so Frank's font may already support all 25 emoji versions in the data. The version-cutoff bug would therefore be minor for him. Parsing fc-query charset ranges into single code points is feasible.
+
+fc-query charset output uses hex ranges, which is acceptable for parsing. The plan's font check targets the installed Noto Color Emoji font directly via fc-match, which is reasonable because GTK and Pango typically resolve that font through fontconfig.
+
+COLRv1 rendering is a font capability, not a plan defect.
+
+The search ranking logic may fail to surface the intended emoji. It requires every concept to match simultaneously. A query like "american flag happy" cannot return an emoji that is both an American flag and happy. The best matches would then be empty.
+
+The search ranking is actually sound. Each concept gets its own row, so a query like "american flag happy" will still surface the flag and happy faces near the top.
+
+The vet sentence example shows a potential issue with apostrophes. The word "isn't" might be split into two tokens or kept as one depending on how the plan normalizes text.
+
+The vet sentence example exposes a layout issue. Each word becomes its own concept row, so the query produces many rows of at most two lines each. The intended emoji may appear far down the list and fall below the fold.
+
+The vet sentence example exposes a layout issue. Each word becomes its own concept row, so the query produces many rows of at most two lines each. The intended emoji may appear far down the list and fall below the fold.
+
+The evaluation logic may use a flat ranking across all concepts, while the UI sections results into best matches, per-concept rows, and related emoji. This mismatch could let the evaluator pass a query even though the intended emoji appears far down in the UI.
+
+The greedy phrase-splitting logic is sound for the "american flag happy" example. It correctly matches the longest known phrase first, then treats the remaining word as a separate concept.
+
+However, "happy" is a very common enriched term that attaches to many face emoji. This is intentional.
+
+Greedy phrase matching can still mis-segment queries like "star" into too many fragments.
+
+The stopword list may also be too aggressive. A noise query such as "ok so" could be stripped down to nothing and fail to trigger the browse view.
+
+The plan treats "ok" and "so" as stopwords, but they are not in standard English stopword lists. If the implementation uses a classic NLTK or scikit-learn list, those words would survive filtering. The query would then search for "ok" instead of triggering the browse view.
+
+The plan never explicitly strips apostrophes during normalization, so "isn't" would remain a single token and could become a junk concept. This is a medium sentence-quality issue.
+
+The held-out evaluation set was generated by Codex gpt-6-luna. The same person who writes the enrichment prompt also reviews the answer key for impossible expectations. This creates a mild leak: they could remove difficult queries as "impossible" and avoid changing the answer key when targets are missed.
+
+The enrichment prompt includes examples drawn directly from Frank's stories, such as "vet" for 🏥. This risks teaching to the test because the evaluation also requires those same stories to pass. The held-out queries are kept blind to the enrichment model, and the two vendors differ, which limits leakage.
+
+The held-out evaluation is judged by a third-party Gemini model. The plan does not specify whether the 30 sampled queries are drawn randomly or after seeing results, which risks bias. The evaluation rule "no decoy outranks it" is ambiguous: it is unclear whether this means no decoy outranks the first acceptable emoji in every group.
+
+The ambiguity around the decoy rule is resolved. A decoy must rank below the first acceptable emoji in every group, which is strict but acceptable.
+
+Enrichment can only add terms and cannot remove them. It may cause regressions where the wrong emoji ranks higher or a decoy outranks a target, but the plan allows at most two such regressions.
+
+The evaluation's "top 12" may refer only to the flat best-matches list, excluding per-concept rows. If so, the UI's sectioned layout would not affect the score.
+
+The UI orders results as best matches first, then per-concept rows, then related emoji. For a query like "american flag happy", the best-matches row may be empty or contain junk. The intended emoji would then appear in the concept rows below.
+
+The evaluation may use a flat global score that ignores the UI's sectioned layout. A sentence query could then fill the top 12 with the first concept's matches while burying the intended emoji in a later section. The evaluator would not see what the user actually sees.
+
+If the evaluator uses display order, the "top 12" rule would clash with the sectioned layout for sentence queries. The plan permits changing the ranking to pass evaluation, which could break the intended UI design. This is a process risk. It is a high mislead if the pass rate is treated as a signal that Frank will see the emoji near the top.
+
+The evaluation's hit@1 metric is ill-defined for multi-concept queries, since no single emoji can satisfy every concept simultaneously. The baseline search spike also returns unrelated decoys such as American Samoa and football, which complicates the requirement that no decoy outrank any target.
+
+The "american flag" enriched term is a valid fix for the baseline. American Samoa's label contains "american", so the phrase would match it and prevent it from outranking the United States flag.
+
+The enrichment prompt asks for demonyms and nicknames, but the example does not require the full phrase "american flag". If the model only outputs "american" and "usa", the query splits into separate concepts instead of a single phrase. The phrase index would then miss the combined term, so the enriched phrase may never be generated.
+
+The phrase "american flag" is not required by the enrichment prompt, so it may never be generated. If the query splits into separate concepts, "american" matches many unrelated emoji such as American football and American Samoa. The baseline search would then return junk concepts instead of the intended targets.
+
+American Samoa outranks the United States flag in the baseline search. Its label contains "american" with weight 10, while the US flag's label lacks that word entirely. The enriched "american" term has weight 5, so the label match wins. This is a high-severity search bug.
+
+The primary story fails unless the segmenter treats "american flag" as a single phrase concept. The prompt only asks for demonyms, so the enriched phrase may never be generated.
+
+The phrase "american flag" is not guaranteed to be generated, and the post-check does not require it. If the query splits into separate concepts, "flag" becomes another independent match. The phrase index may only store single-word labels, so American Samoa's label would not contain the multi-word phrase "american flag". This would prevent the phrase from ranking the United States flag above the decoy.
+
+The phrase "american flag" is not present in American Samoa's label, so the United States flag would outrank it only if enrichment generates that exact phrase. If the phrase is missing, the story fails evaluation and the prompt can be revised to require it.
+
+The evaluation will catch the ranking bug, so the prototype is not doomed. The real risk is overfitting the held-out set: if the prompt is revised to require the exact phrase "american flag", it would fix Frank's stories but leave the underlying label-weight problem intact for unrelated queries.
+
+The weight scheme undermines enrichment by letting label matches override enriched terms. This is a medium-to-high severity design flaw. The evaluation catches target failures and allows prompt or ranking changes, so the process can still reach the goal.
+
+The plan's iterative loop may fix ranking bugs, but it cannot repair structural installation failures. Wayland insertion failures, shortcut focus issues, IBus module errors, and engine activation problems would remain even after prompt and ranking adjustments.
+
+The plan relies on custom keyboard navigation in nav.py instead of GTK FlowBox's built-in key handling. Arrow keys must be intercepted at the window level via a GTK 4 EventControllerKey in capture phase to prevent the search entry from consuming them.
+
+The plan correctly anticipates that Enter must be intercepted to prevent the search entry from inserting a newline, and Tab must be captured to open the tone strip instead of moving focus. These are standard GTK event-handling tasks.
+
+The plan claims GTK 4.14 GridView lacks section headers, but GTK 4.12 introduced GtkSectionModel and GtkListView supports sections. This is a factual error that would break the UI design.
+
+GtkListView gained section headers in GTK 4.12, but GtkGridView has not. The plan's GridView design will likely require nested lists or a workaround.
+
+Ubuntu 24.04 ships GTK 4.14, which the plan cites as the version lacking GridView section headers. Frank's Ubuntu 26.04 / GNOME 50 machine likely runs GTK 4.22 instead. The plan's GTK 4.14 claim is therefore outdated for the target environment.
+
+FlowBox is a valid choice for both GTK 4.14 and newer versions, so the plan's reasoning is sound. Loading roughly 1900 emoji widgets at once will strain memory and risk a slow cold start, though the plan already anticipates this.
+
+The plan treats the FlowBox keyboard navigation as medium risk. Mapping rows and columns across variable-height sections is feasible in nav.py and unit-tested. The skin-tone strip design is also sound: Emojibase provides single tones 1–5 and paired tones, with bare swatches replacing component groups.
+
+The plan does not define how a single remembered tone maps to paired two-person emoji, leaving that behavior slightly underspecified. Emojibase also includes hair style and gender variants, which the plan treats as skin tones alone.
+
+The bottom bar explicitly says "Tab skin tones," so gender variants are likely excluded. The phrase "skin tones etc." is too vague to require them, and this is a minor gap rather than a plan failure.
+
+The probe engine must be inspected to confirm that extending it is sound. The Unix socket protocol lets the picker commit via insert.py, but if the global engine is inactive or unselected, the fallback reverts to clipboard insertion. A generation counter is also introduced.
+
+The plan describes a race condition in the insertion engine. The picker polls generation every 25 ms and commits only when all focus holds are stable. A focus change during that gap could still occur. The plan does not require the engine to atomically check generation at commit time. This leaves a time-of-check-time-of-use vulnerability.
+
+The insertion race is a medium reliability issue. The probe used a simple delay and worked, so the narrow window may be acceptable. The plan omits retry logic, though the probe retried once on failure.
+
+The plan rejects portal paste because it overwrites the clipboard and fails in terminals. The fallback also copies to the clipboard, so both paths overwrite it. This is acceptable since PROBLEM.md already documents that copy-only kept the emoji after the window closed.
+
+The plan assumes the picker exits immediately after copying. On Wayland, a source client that closes before the clipboard transfer completes can lose its selection unless a clipboard manager is present or the client waits for confirmation. The PROBLEM measurement confirms that copy-only kept the emoji after the window closed on Frank's machine.
+
+GNOME Shell's clipboard manager likely preserves the emoji after the picker window closes. The PROBLEM measurement confirms this on Frank's machine, so the plan's clipboard fallback is sound.
+
+The install.sh script must write to the `org.gnome.desktop.input-sources` gsettings schema. That schema stores input sources as `(type, id)` pairs in an array. It also stores a current source index. The script must set both the sources list and the active engine.
+
+GNOME Shell watches the gsettings `current` index and may reset the active IBus engine on the next focus change. The plan only updates `ibus engine` and never sets `current` to zero, so the picker could be deselected after installation.
+
+Prepending the new engine to the gsettings sources array shifts every existing index by one. If the old `current` value was not updated, the active source can jump to the wrong engine entirely.
+
+Frank's single US input source means prepending the new engine to the gsettings array leaves the active index at zero, so the plan works for him. Users with multiple sources would hit the bug.
+
+The xkb layout component XML only copies the base layout name and omits variants. Frank uses plain US without variants, so this is acceptable for his setup.
+
+The probe's emojitest.xml.in template must be inspected to confirm the IBus component XML uses a unique name and long description.
+
+GNOME custom shortcuts are stored as an array of relocatable schema paths under `org.gnome.settings-daemon.plugins.media-keys`. The plan correctly adds a new path and sets its child keys, so this step is safe.
+
+The plan describes the shortcut as "Ctrl+Alt+E," but the gsettings binding syntax requires `<Ctrl><Alt>e` with angle brackets. This is a minor documentation risk. The command string also runs directly through gnome-settings-daemon without shell expansion, so any shell metacharacters must be escaped.
+
+The engine component file must reside in the system IBus component path. The probe confirmed this works on Frank's machine.
+
+The Python IBus engine uses only syntax available in Python 3.12, so it will run correctly under Python 3.14 on the target system.
+
+Ubuntu 26.04 ships PyGObject GTK 4 and libadwaita, which satisfy the plan's runtime dependencies.
+
+The search box im-module name still needs verification against this system's GTK installation.
+
+The enrichment step rejects terms containing characters outside letters, digits, apostrophes, and hyphens. This is a sound filter.
+
+Batches of sixty hexcodes are sent to claude for enrichment. The review machine has no network access, but the development machine does.
+
+Validation requires every returned key to match the batch's hexcodes exactly. The AI model might return a subset instead.
+
+The plan retries a failed enrichment batch once, then reports it; if it fails twice, those emoji remain unenriched. The cache key is ambiguous: the plan records the prompt hash but does not say whether the cache key includes it, so changing the prompt would silently reuse stale keywords.
+
+The enrichment cache key omits the prompt hash, so changing the prompt would silently reuse stale keywords and stall the evaluation loop. This is a medium risk.
+
+Running `claude -p` from an empty scratch directory may still load user-level memory or project instructions from `~/.claude/CLAUDE.md`. The enrichment prompt could be polluted with extra instructions. This is a medium-to-low risk.
+
+Claude Code in `-p` mode is agentic and may use filesystem tools such as Read, Grep, or Bash. The enrichment prompt must explicitly forbid tool use to prevent the AI from reading the repository.
+
+The empty scratch directory prevents Claude from loading project-level instructions such as CLAUDE.md. Because the emoji data is passed directly in the prompt, the AI cannot discover or read repository files through filesystem tools. The enrichment prompt is fully controlled, so held-out files remain inaccessible.
+
+The held-out evaluation set lives in the same git repository as the enrichment prompt. If the user later runs claude from inside the project, it could discover and read tests/eval_queries.json. The plan only prevents this by enforcing an empty scratch directory.
+
+The noise rule requires no emoji to appear in more than three of the top-five lists across twenty queries. Gibberish queries return no results, and stopword queries show a browse view rather than a top-five list. Only a few noise queries likely produce valid top-five rankings, so the rule may be too weak to catch false positives.
+
+The noise rule is reasonable but only applies to noise queries that actually return top-five lists. Gibberish and stopwords do not produce rankings, so the three-emoji cap only constrains a subset of the twenty noise queries. The plan describes these queries as being defined by a script, which is vague but acceptable.
+
+Sentence queries such as "well done" are unlikely to be affected by stopword removal because neither word is typically filtered. However, "please" might be stripped from the query "pray for me," leaving "pray" to match the prayer emoji. This could cause false positives in sentence-based evaluation.
+
+The frequency bonus cap is underspecified. If the cap is too high, recent emoji could outrank better matches, which is a medium risk.
+
+The probe confirmed the IBus engine leaves no stray preedit characters behind. The engine code must be inspected to confirm it never uses a preedit.
+
+If the engine silently fails to commit the emoji, nothing appears and nothing is left behind. The success notification only fires on the fallback path, so the user might think the insertion failed.
+
+The probe measured focus return after hiding the picker on Wayland. The Enter path should behave identically to the click path, so this is acceptable.
+
+The picker spawns a new process per shortcut and exits after two seconds. Multiple presses could open duplicate pickers that race to commit. This is a low-risk edge case.
+
+The engine socket path in /tmp or XDG_RUNTIME_DIR could be predictable, allowing another user to connect. On a single-user machine this is unlikely and not worth nitpicking.
+
+The installed IBus component XML points its `exec` line to the repository path, so moving the repo later would break the engine. The probe confirmed the executable and shebang work correctly.
+
+Uninstalling the engine while it is still the active input source may confuse GNOME, which is why the plan asks the user to log out.
+
+The plan correctly avoids `ibus restart`, which would break the Super+. shortcut. However, adding the custom engine as the first input source may redirect Super+. to the new engine before it implements emoji mode. Whether `ibus write-cache` or `ibus engine` commands disrupt Super+ is unknown and will be tested in Frank's round.
+
+The prototype engine will not implement Super+. because the plan replaces that shortcut later. This is a known side effect, and the test round already covers it. It is not a goal failure.
+
+The headless test uses a private IBus daemon against scripted focus. This validates logic but does not prove Wayland behavior, which the plan already acknowledges.
+
+Xvfb screenshots are feasible on this X11 machine. GTK 4 requires `GDK_BACKEND=x11` to run under Xvfb. libadwaita may need `GSK_RENDERER=cairo` if GPU support is missing, which could cause screenshot failures.
+
+The no-network restriction applies only to the reviewer, not the build machine, so downloading emojibase-data via npm is acceptable. The plan lists labels, tags, groups, and shortcodes, but it does not specify the exact npm tarball paths inside emojibase-data. An implementer must infer these from the package layout, and a wrong path would cause a build failure.
+
+The plan assigns a weight of two to group and subgroup names in search fields. This may inflate noise scores.
+
+The keyboard chart will show recent, frequent, and all categories when the query is empty. Highlighting the first result on typing and inserting it on Enter satisfies the goal. Mouse selection via hover and click works as intended. Page Up and Down provide custom navigation. Home and End will edit the search text rather than move to the grid start, which conflicts with the expectation of moving to the start of the grid.
+
+Arrow keys cannot move the search cursor, but typing and backspacing remain functional. The probe measured that the picker commits after 150 ms and succeeds on the first retry within 50 ms.
+
+The probe wording is ambiguous. "Succeeded on the first retry" could mean the initial commit attempt failed and only the second attempt succeeded, or that the first attempt itself succeeded within 50 ms. This leaves the exact timing of the successful commit uncertain.
+
+The probe wording is now interpreted as the first commit attempt failing at 150 ms, with a retry succeeding within 50 ms. The plan requires at least 150 ms since hiding, so the initial failure likely stems from the engine not being ready or focus not having returned.The probe's ime_deliver function retries when the reply is "err:no-focus".
+
+The PROBLEM document records the first attempt as failing and the retry succeeding within 50 ms. The ime_deliver code uses GLib.timeout_add to schedule retries on "err:no-focus" replies.
+
+The first delivery attempt is scheduled 50 ms after ime_deliver is called, not immediately. The caller adds a 150 ms delay before invoking it, so the initial attempt actually occurs at 200 ms.
+
+The PROBLEM document records the picker asking the engine to commit after 150 ms. The plan claims this delay is the measured working value and that commits never succeed sooner.
+
+The phrase "succeeded on the first retry" is a misstatement. The first attempt is itself a delayed retry scheduled 50 ms after ime_deliver is called, so it cannot be the first attempt at all. The PROBLEM document records this as the owner's interpretation of the logs.
+
+The engine returns "err:no-focus" because the window hide creates a brief gap where focused is None, between the previous focus_out and the app's focus_in. Committing during that window fails; retrying 50 ms later succeeds.
+
+The plan's new logic polls every 25 ms and commits only when three conditions are met: the generation has advanced past g0, 150 ms have elapsed since the picker opened, and 30 ms have passed since the last focus change.
+
+The plan's 30 ms stability window after focus_in should land commits after the engine has fully refocused the application. This is a stronger guard than the probe's retry logic, which could commit during the brief gap where focused is None.
+
+The generation counter increments only on focus_in, not on focus_out. The plan assumes the app's focus_in is the next focus_in after the fake context's focus_out. If the engine delivers a focus_in for a different client first, the generation would advance past g0 without the application actually regaining focus. The commit would then target the wrong window.
+
+A false positive is possible. If the engine re-focuses the fake context after the picker hides, generation advances past g0 and the 30 ms stability window passes. The commit would then land on the fake context, be silently dropped, and counted as success.
+
+The probe's successful retry proves this cannot happen in practice. The commit that succeeded was to the real application context, not the fake one.
+
+The false positive requires the fake context to receive a focus_in that is stable for 30 ms and occurs before the application regains focus. The probe succeeded around 200 ms, so the application had already refocused by then. This means the false positive would need the fake focus_in to arrive at roughly 180 ms, which is unlikely.
+
+The false equivalence between generation advancement and real application focus is a real inaccuracy. It rates as medium severity because the 30 ms stability window commits to whichever context was last focused, and the probe evidence suggests the transition on this machine is simply an unfocused gap followed by app focus.
+
+The gap where focused is None occurs before the generation counter advances, so commits are correctly blocked during that window. This matches the probe's successful behavior and should not be flagged as a definite failure.
+
+A new edge case was considered: if the application context survives the picker hide and IBus restores it without emitting a fresh focus_in, generation would remain at g0. The plan would then wait two seconds and fall back to the clipboard.
+
+The probe never checked the generation counter, so it could have committed successfully even if the application context survived the picker hide. IBus architecture confirms that focus changes are delivered to the engine as do_focus_out and do_focus_in events, and the GTK app regains focus by calling focus_in on its input context.
+
+The engine will receive another focus_in when the application regains focus. On Wayland, mutter forwards the text-input enable event to IBus, which then fires focus_in. The PROBLEM document does not report a second focus_in in the probe logs; it only records the successful retry after no-focus.
+
+The README describes a startup route selection that falls back down a list, but the plan explicitly excludes the portal and limits clipboard fallback to failure cases only. I will also inspect setup.sh, selftest, and GTK IM module names.I am checking how GTK input method modules are registered on the system.
+
+The probe appends the IBus engine to the input source list and restarts IBus. The plan prepends it and skips restarting. On GNOME Wayland, `ibus engine` can be overridden by `inputSourceManager` if the current index remains at zero.
+
+GNOME will attempt to activate the engine at index zero. The engine may fail to appear in the IBus registry without a daemon restart. The plan's logout fallback works because gnome-session restarts IBus.
+
+`ibus write-cache` updates the on-disk registry but does not refresh the running daemon's in-memory list. `list-engine` therefore cannot see the new engine until restart. The logout fallback is confirmed to work: after logout, GNOME reads the updated input sources and spawns the engine at index zero.
+
+The probe confirmed that after logout, Frank's keyboard is the passive engine and typing remains unaffected. The engine returns False for Shift and shortcuts, so IBus forwards them to the client. Compositor grabs on Super and Ctrl+Alt may still intercept some keys, but regular application shortcuts should work.
+
+The engine's `<layout>us</layout>` declaration tells GNOME which XKB layout to apply while the engine is active. GNOME's IBus integration uses this value to set the keyboard layout.I am inspecting the GTK 4.14 immodules directory and libgtk strings to verify the simple context ID.The plan assumes GTK 4 input method contexts are built as loadable modules. They are actually compiled in directly.The string `gtk-im-context-simple` exists in libgtk-4.so.
+
+The GTK 4 source registers a built-in module with the ID "simple", yet the binary contains the string "gtk-im-context-simple". This mismatch is suspicious.The error string is `No IM module matching GTK_IM_MODULE=%s found`.
+
+I am tracing the default IM context ID logic in GTK 4.14. I recall `gtk-im-context-simple` and `gtk-im-context-none` near broadway and quartz. I cannot fetch the source online, so I am relying on memory of `gtk/gtkimmodule.c`.
+
+I am checking whether GTK 3 used the ID "simple" or "gtk-im-context-simple". I am recalling `gtk/gtkimcontextsimple.c` to verify.Disassembling the function that references GTK_IM_MODULE and gtk-im-context-simple.
+
+Recalling GTK 4.14.5 source from memory. The relevant file is gtk/gtkimmodule.c, which includes gtkimcontextsimple.h and gtkimcontextnone.h. It conditionally includes gtkimcontextwayland.h for Wayland. The match_backend function and its return type are being reconstructed.
+
+Reconstructing `_gtk_im_module_get_default_context_id` from the binary. It reads `GTK_IM_MODULE` and compares it against context IDs like `gtk-im-context-simple`. The adjacent string literals in rodata match their source order, confirming this is the target function.
+
+The function checks for Wayland text input managers and compares backends against "broadway" and "quartz". It reads GTK_IM_MODULE and notifies gtk-im-module. The exact source is from GTK 4.6+ gtk/gtkimmodule.c, rewritten from the 4.14.2 version.I am decompiling the GTK IM module function `_gtk_im_module_get_default_context_id` to verify its implementation.A Python script will test different IM module settings and read source comments from GIR or libraries.
+
+Network access is unavailable. I will use gdb or run GTK to capture warnings instead. I am reconstructing the GTK 4.14 `lookup_immodule` function from memory, noting it checks `GTK_IM_MODULE` and then inspects the display backend name for Wayland.
+
+The reconstructed `lookup_immodule` function now includes a Wayland-specific check using `gdk_wayland_display_query`. Fetching the GTK 4.14.5 source package is not possible without network access, and parsing assembly with objdump is too complex. The plan is to run a GTK application with `GTK_IM_MODULE` set and capture debug output or stderr instead.xvfb-run failed to set the display properly because a Python GTK app initialized before it could configure the virtual display.
+
+The sandbox may be blocking Xvfb. The xvfb-run command might have failed silently, and tail could have truncated its output. I will check the DISPLAY variable and try running Xvfb manually.xvfb-run worked when using python -c with init_check.
+
+The Application path failed because it requires full initialization, unlike the minimal init_check probe. The override message explicitly recommends using Gtk.init_check().
+
+The first xvfb-run likely failed to bind its socket directory, leaving a stale or dead DISPLAY. The second attempt succeeded with :109. I will rerun the probe with init_check.Settings is None until a display is opened.GTK init_check returns True, but the display is None. This suggests a silent initialization failure.Display.open returned None. The DISPLAY variable likely points to a dead Xvfb session, and the xvfb-run wrapper is hiding the display from the environment.
+
+The probe script leaks the existing DISPLAY variable into xvfb-run. The stale :109 session likely died from the earlier socket permission error on /tmp/.X11-unix.
+
+The earlier fatal error likely came from the manual Xvfb :95 server, not xvfb-run. xvfb-run itself started a working :109 session. The current failure may be caused by calling Gdk.Display.open before gtk_init on that stale display name.
+
+The probe script never calls Gtk.init_check(), which Gdk.Display.open likely requires. I will add that call and print the Gdk.DisplayManager. I also suspect xvfb-run may be passing a stale DISPLAY even when it cannot actually start a server.
+
+I will verify the Xvfb server is still running with xdpyinfo. I also need to confirm the exact GTK 4 IM module name by inspecting the compiled library, since the probe script must match it exactly.Inspecting the probe file at offset 0x5BB4AE.The IM module logic is located around file offset 0x181f00.I need the string values at those addresses.
+
+The match function at 0x181e90 compares context IDs against four strings. The Wayland path queries the registry for `zwp_text_input_manager_v3`. A second function at 0x181fa0 checks IDs against `gtk-im-context-simple` and another string.
+
+`gtk-im-context-simple` is a valid built-in context ID. The function returns it when requested. Another string at 0x5bb53d also yields that same ID. It may be the "simple" alias. `gtk-im-context-none` is at 0x5bb544. The function then looks up an extension point at 0x5bb589.
+
+The address 0x5bb53d is exactly 15 bytes past the start of `gtk-im-context-simple`. It points to the substring "simple". The code therefore treats "simple" as an alias for the full context ID.
+
+The plan's context ID name is correct for GTK 4.14; both "simple" and "gtk-im-context-simple" resolve to the same canonical ID.
+
+The default context ID logic in `_gtk_im_module_get_default_context_id` at 0x1820c0 reads `GTK_IM_MODULE`, splits by colon, and passes each candidate through the display-matching function.Inspecting the function `_gtk_im_module_get_default_context_id` at address 1820c0.
+
+The function reads GTK_IM_MODULE and splits on colons. It selects the first valid context ID for the display. Valid builtins are "simple" or "gtk-im-context-simple", and "none" or "gtk-im-context-none". Other names are resolved via the gtk-im-module extension point. Function 181e90 checks display suitability.
+
+Function 181e90 returns true for most IDs. It returns false for "quartz". It returns false for "ime". It returns true for "wayland" only if the display is Wayland and zwp_text_input_manager_v3 exists. It returns true for "broadway" only on a Broadway display.
+
+The "ime" context ID is permanently invalid. It is rejected by function 181e90, so the plan's assumption that "ime" could be a valid fallback is incorrect.
+
+The plan's choice of `gtk-im-context-simple` is correct. It is a valid context ID on Wayland, so it will be selected without warnings. This is not a bug. However, setting this module before widgets are created will prevent IBus from receiving input on Wayland.
+
+`gtk-im-context-simple` is the builtin compose context, not the Wayland text-input module. It will not use the Wayland protocol. The plan is implementable if the environment variable or settings are set before GTK initializes or before the entry widget is created. Some users report that even this simple context may not receive keys identically on Wayland.
+
+The IM module name is not a concern. The simple context handles compose sequences and keys reach the widget directly, so IBus stays out of the loop.
+
+Now examining installation. GNOME Shell stores input sources as an `a(ss)` array. Adding the engine as the first source sets its index to zero and activates it immediately.
+
+The gsettings engine name must match the XML `<name>` tag exactly. The probe uses `emojitest`, so the plan's reference to "the engine" is correct.
+
+GNOME 45+ displays IBus engines in the panel. Activating one sets the global engine. This was measured and works for the probe.
+
+The plan requires a logout if the engine is missing. This is acceptable.
+
+Checking whether `ibus write-cache` without a restart will still let the engine appear after logout. Logout kills the ibus-daemon, so a fresh login starts a new daemon that scans `/usr/share/ibus/component/*.xml` and the component cache at startup. The exact cache path is being verified against the ibus source.
+
+The plan's ordering of installing the component before running `ibus write-cache` is correct. The cache will include the new engine after logout and re-login.
+
+A potential permission issue was considered: running `ibus write-cache` as a regular user after installing to `/usr/share` might not see the new system file. This is unlikely because the user cache can read `/usr/share/ibus/component/*.xml`.
+
+The shortcut `Ctrl+Alt+E` is not typically used by ThinkPad or GNOME.
+
+A packaging issue was found. The picker is a Python module that must run from its source directory or be installed on PYTHONPATH. A custom shortcut launched via `gnome-settings-daemon` runs with the home directory as the working directory. If the plan does not specify installing the package or changing to the source directory first, the shortcut will fail because `python3 -m emoji_picker` cannot find the module.
+
+The shortcut command should use an absolute path to the module's `__main__.py` entry point. This avoids PYTHONPATH issues without requiring installation. The plan does not specify this pattern, so it is underspecified but not a critical failure.
+
+The plan correctly uses a window-level EventControllerKey in capture phase to intercept keys before the Entry widget receives them. The simple IM module relies on Multi_key compose sequences, which is acceptable.
+
+The 400ms cold-start target for 1900 emoji may not be achievable. The plan acknowledges this risk and includes a fallback using a resident process.
+
+The 400ms cold-start target is a medium performance risk. Rendering 1900 GTK buttons may take one to three seconds, which is acceptable but not ideal.
+
+Memory usage is estimated at 200 to 400 megabytes from emoji font labels. This is not a failure.
+
+The font cutoff algorithm needs verification against the local Noto Color Emoji version and Unicode emoji versions. The plan's claim about the development machine's font setup may be inaccurate.
+
+Plain Gtk.Label widgets render color emoji automatically via fontconfig fallback. The probe used this pattern successfully, so the plan's approach is valid.
+
+The fonts.py script hides emojis newer than the installed font version.
+
+The font cutoff algorithm could hide too many or too few emojis. This is a medium risk, but common emoji remain visible so the core goal is unaffected.
+
+The enrichment evaluation plan misleads by conflating UI order with rank order.
+
+The search UI is not a single flat list. It shows best matches first, then one section per concept, then related prefix matches. Evaluation metrics like hit@1 and MRR assume one total order. A query can pass the metric while the emoji sits below a fold of concept rows, or fail the metric while the emoji appears in the first screen of concept rows.
+
+The evaluation plan does not score visual order. It compares baseline and enrichment on a single ranking function, then reports global rank metrics. The UI presents results as a multi-section keyboard chart, so the metric may not match what users actually see.
+
+Frank's stories are multi-concept. The evaluation requires the correct emoji in the top twelve of the flat ranking. The UI splits results into sections, but if the best-matches row is empty, the first concept row appears at the top of the chart. A query like "american flag happy" would show the flag near the top while happy sits below. This satisfies the requirement that the emoji be near the top of the big keyboard-navigable chart.
+
+The iteration rule ties the UI ranking directly to the evaluation metric. If a query like "many concepts prayer" fails the top-12 test, the team may change the ranking to interleave results or score globally so the emoji lands in the top twelve. This would improve the metric but could also break the intended visual flow. The UI might then show no best-match row and instead list concept rows starting with the first concept.
+
+The enrichment evaluation plan claims that keywords cannot be fitted to the answer key because it is written before the model sees it. However, the prompt examples already contain the exact failure modes from the search spike, such as "vet" for hospital and "american"/"usa" for flags. This means the held-out queries may not be truly unseen by the model, which undermines the evaluation's claim of leakage prevention.
+
+The two stories are the specification, not the held-out test. The real risk is that persona queries from earlier simulated users were used to design the prompt. If the prompt was written with those queries in mind, keywords can be fitted to the answer key even though the file is never read by the model.
+
+The held-out set is reused across iterations. The plan explicitly permits tuning the prompt or ranking whenever targets are missed. This guarantees test-set overfitting: the held-out pass rate will be artificially inflated to 85% rather than remaining an unbiased estimate.
+
+Frank's later real queries serve as a fourth source of held-out data. This makes the evaluation a methodological overstatement of generalization. Treating the 85% pass rate as proof that the approach works on unseen queries would be a HIGH mislead.
+
+The human is in the tuning loop. The plan treats the inflated held-out pass rate as the gate to declare the enrichment done. That is a HIGH mislead because the evaluation can pass while Frank's real queries still fail.
+
+The evaluation mislead is rated MEDIUM. The baseline versus enriched comparison on the same queries remains valid, but the held-out claim is weakened because Frank's later queries are known in advance. Gating completion on an artificially inflated held-out pass rate is the core flaw. The plan is not unsound overall; the methodological softness is a medium risk that could still allow reaching the goal.
+
+The blind judge only sees flattened top-10 lists, not the sectioned UI. This repeats the flattening ambiguity.
+
+Sampling 30 queries after seeing results introduces minor bias.
+
+Order randomization and both-order evaluation correctly control position bias.
+
+The plan cites a Gemini reader called "agy" but never confirms it is installed.
+
+The PROBLEM document only establishes Claude as the available LLM. The plan introduces Gemini "agy" and Codex "gpt-6-luna" for the held-out evaluation without confirming they exist on the development machine. If these tools are missing, the evaluation cannot be executed as specified.
+
+The evaluation would correctly catch a decoy ranking such as 🇦🇸 outranking 🇺🇸, so this test does not mislead.
+
+The plan lists "ok so" as a stopword-only query, but standard English stopwords do not include "ok". If the script uses a standard list, it would flag "ok" as a stopword and block emoji searches for "ok". This is a low product issue because "ok" is a reasonable emoji search term.
+
+The query normalisation is sound. Terms are capped at one to three words and restricted to letters, digits, apostrophes, and hyphens.
+
+The enrichment validation does not mention accent stripping, but the query normalisation does. If index terms keep accents while queries strip them, accented keywords will never match. This is slightly underspecified and a low risk.
+
+The prefix-matching rule correctly handles partial input. When the user types "american flag" and the last word is "amer", that suffix is matched as a prefix while typing without trailing space. Earlier words in the query are treated as complete matches.
+
+The plan drops iamcal and joypixels from the shortcodes source list. Only github, cldr, and emojibase remain, even though PROBLEM.md lists all three plus iamcal and joypixels.
+
+The engine counts focus_in as generation. The picker reads g0 when Enter is pressed, then hides. IBus focus shifts to the fake context at open time, so generation is already greater than the app's generation before the picker even appears.
+
+The probe confirmed that hiding the picker window on Wayland returns focus to the application and triggers IBus focus_out and focus_in events. The plan now requires the engine to check that generation exceeds g0 when Enter is pressed. The remaining question is whether the fake context actually emits a focus_in event when the picker opens.
+
+The probe confirms the real application receives focus, because the emoji appeared in the app rather than the fake context. The remaining question is whether a focus_in event occurs after generation g0 is read at Enter, which would satisfy the plan's requirement that generation exceed g0.
+
+The probe confirms the application lost IBus focus when the picker opened. Mutter sends a text-input leave event and focuses the fake context. The later commit-after-hide proves focus returned to the application. A new focus_in event will therefore occur after generation g0 is read at Enter. The plan's requirement that generation exceed g0 is satisfied.
+
+The insertion logic is sound. The measured success does not prove a focus_in event fires after the picker hides, but the err:no-focus retry pattern strongly suggests a gap where focus leaves and returns. That gap produces the required focus_out and focus_in sequence, so the generation logic works as intended.
+
+The plan's timeout condition for engine unreachability is underspecified. It does not state when the engine is checked, so a failure could be misread as a timeout.
+
+Committing an emoji with ZWJ characters is safe because the probe already confirmed this works.
+
+A spurious fake focus_in would only occur if focus moved to the desktop for more than 30 ms after the 150 ms delay. In that case the engine would commit to the fake context instead of the application.
+
+A transient fake focus lasting 30 ms could trigger premature commit if the engine polls for two seconds. The probe logs `set_capabilities` to distinguish the fake context, but PROBLEM.md explicitly states that no decision depends on cursor locations and that the earlier assumption about the fake context sending none was not established.
+
+The fake IBus context is created with default capabilities. It may not call `do_set_capabilities` at all, or it may call it with zero capabilities. This means the engine cannot rely on capability flags to distinguish the fake context from the real application.
+
+The selftest reveals that a commit to the fake IBus context returns "ok", which the plan would treat as success. If the engine races and commits to the fake context instead of the application, the emoji vanishes without triggering the notification fallback. The probe avoided this race because it retried on missing focus and successfully delivered the commit to the real app.
+
+The fake-context commit risk is rated medium, not high. The probe already delivered at roughly 200 ms, and the plan’s stricter focus-in and stability checks reduce the false-positive window. The engine treats this as a known residual risk rather than an unproven failure.
+
+A false negative from the generation check is unlikely. The engine reads generation g0 when Enter is pressed, before the picker window hides, so the application’s focus_in cannot occur earlier.
+
+The probe's 50 ms retry window after focus_out may be too short. If the application regains focus without a fresh focus_in event, the engine could commit to the fake context before generation exceeds g0.
+
+The insertion logic is sound. The engine reads generation g0 before the picker hides, so the application’s focus_in cannot occur earlier. After hiding, focus_out resets the focused context without changing generation, and the subsequent focus_in increments it above g0.
+
+A potential high-severity issue with installing the engine as the first source was considered. GNOME normally uses `ibus_engine_desc_get_layout()` to set the XKB layout when an IBus engine is selected. The passive engine declares layout `us`, which matches the user’s US keyboard setup, so keys should still function.
+
+Inserting the engine at the first source risks GNOME Shell intercepting Ctrl+Shift+E or Super+. The engine selection logic also conflicts with gsettings: when the IBus picker is prepended to the input sources, recent GNOME Shell clamps the current source index, which may prevent the new engine from becoming active.
+
+GNOME Shell reactivates the first input source after logout, so the picker engine will become active without an explicit `ibus engine` command. If the engine is not yet known to IBus, the source may be skipped or shown as invalid. The plan handles this by asking for a logout when the engine is missing from `list-engine`. Uninstall only removes the picker's own entries and does not restore the previous configuration.
+
+The plan correctly preserves user shortcut changes and only removes the picker's own entry. A backup is required if installation corrupts the input sources. `ibus write-cache` writes to the user cache, but the system daemon can still scan XML files when the cache is missing or stale.
+
+The probe confirms Python GI IBus works on engine startup.
+
+The "Best matches" search requires every remaining concept to match an emoji. After stopword removal, the query "vet" leaves many concepts. No single emoji matches all of them. The result list becomes empty. Each concept then gets up to two lines. That yields roughly twenty to twenty-four emoji per concept. Common words like "good", "looking", and "dog" may match irrelevant or no emoji at all.
+
+The search result order follows query order, so dog appears near the top while vet and hospital sit lower. The user story only requires relevant emoji to appear, but the success question demands the target emoji be visible near the top. With roughly eight concept sections and two lines each, prayer could land several screens down. The evaluation logic may accept the sentence if those concepts fall within the top twelve results.
+
+The evaluation target and the UI specification are incompatible. The UI requires each concept to appear in its own row, but the evaluation target demands that all three emoji from the sentence appear within the visual top twelve results. Because the dog concept alone can produce roughly twenty emoji, the three target emoji may not fit in the top twelve rows. The plan permits changing ranking, yet it does not allow altering the UI structure. Consequently, the engine could satisfy the ranking requirement while failing the evaluation target, or vice versa.
+
+The first screen of the picker fits only about nine emoji lines. Two concepts can occupy four lines plus headers, so dog and went appear near the top while hospital and prayer sit below the fold. The sentence story requires several target emoji to be visible near the top, but the layout cannot satisfy that requirement.
+
+The sentence story is a concrete scenario that the UI cannot satisfy. The success question explicitly requires the target emoji to appear near the top. Because the vet sentence leaves hospital and prayer below the fold, this failure is rated HIGH severity.
+
+The sentence failure is rated MEDIUM, not HIGH. The emoji appear and remain reachable by keyboard, but they do not sit near the top as required. If evaluation uses visual order, the vet sentence fails and forces a ranking change.
+
+The iteration loop is part of the plan, so ranking could be adjusted until the sentence passes evaluation. However, the plan does not tie rank to visual order. If rank is defined as a score rather than on-screen position, the sectioned UI would still bury the target emoji below the fold. This would mislead and miss the goal.
+
+Adw.Application is a unique application by default. A second launch raises the existing instance instead of starting fresh.
+
+The plan’s requirement for a new process per shortcut press is safe. Adw.Application exits after inserting, so the next press spawns a fresh instance. If the user presses twice before exit, the second launch sends a D-Bus activate signal to the existing process and exits itself. This is acceptable if the application handles activation correctly. Default Gtk.Application flags are fine without explicit session registration. On Wayland, the shortcut will deliver an activation token to the new process.
+
+The probe confirmed that `Gtk.Application` presents the window with the Wayland activation token, so the picker will receive focus correctly. The global shortcut is handled by `gnome-settings-daemon`, and the picker exits after insertion, leaving no conflict. Because the picker uses a simple IM context, it does not intercept the Enter key; the application receives it instead. The variant popup also behaves correctly.
+
+Emojibase skin tones are dropped from the component group. Variants still come from emojibase skin tones on each emoji. Fully-qualified emoji including VS16 insert correctly. The usage.py frequency half-life file lives in XDG and was tested for corruption. The install script asks for sudo once for the component file. gsettings must run as the user, not under sudo.
+
+If the entire install script is run under sudo, gsettings writes to root’s settings instead of the user’s. The plan says it asks for sudo once, so this is a minor ambiguity.
+
+Super+. may not be an IBus feature in recent GNOME versions. The prototype engine returns False for it while active, which could break the shortcut.
+
+The IBus emoji shortcut is handled by the IBus panel or GNOME Shell, not by the engine. Ubuntu uses Super+. for this feature, and the engine only needs to return False for that key while active.
+
+The Super+. shortcut is registered with IBus as a hotkey. The daemon filters it before the engine. An active custom engine may still allow the IBus emoji chooser to open.
+
+The plan deliberately replaces Super+. with the custom shortcut rather than keeping it. This is not a build failure.
+
+A real install bug exists: adding the engine as the first input source activates it immediately. The engine's `<language>other</language>` tag and rank 0 may cause some GNOME versions to reject it or fail to switch to it automatically.
+
+The probe engine used `<language>other</language>` and worked when manually switched, so auto-selection should be fine. The XML setup block and icon are valid. Committing inserts at the cursor without leaving preedit text behind, which the probe confirmed. A clipboard fallback would overwrite the user's previous clipboard contents.
+
+The plan contradicts the README by omitting the portal fallback. The README lists portal as a possible fallback, but the owner’s decision and PROBLEM.md only confirm copy-only works.
+
+The plan’s scope section explains why portal is dropped, so omitting it does not contradict PROBLEM.md. The README is stale and should be ignored.
+
+Decision 6 requires testing the prototype before relying on it, and the file must be frozen before generation. This is acceptable.
+
+Decision 4 specifies a popup with recent emoji, frequent emoji, and an input box.
+
+The plan correctly implements Decision 2: a big chart, keyboard-first navigation, and Enter key support. The font claim that Noto ships every standard RGI sequence for each supported Unicode version is approximately true for official Noto Color Emoji releases.
+
+A missing RGI sequence within a supported Unicode version would be a low-to-medium issue, not a critical blocker for common emoji. Unicode 15.1 emoji included only sequences, with no new singleton code points.
+
+Unicode 15.1 introduced 118 new emoji sequences with no new singleton code points. Unicode 16.0 added new singleton code points alongside sequences. The font version claim hinges on whether the algorithm requires every single-code-point emoji from a supported version or only the newest version that contains all prior versions' single-code-point emoji.
+
+The plan’s font version logic is vacuous. If Unicode 15.1 contains no single-code-point emoji, the check passes for version 15.1 and the algorithm hides nothing. The font must contain every single-code-point emoji from every supported version to satisfy the claim.Fontconfig fontversion is 134152. That value is far above the typical 24.
+
+134152 equals 2.047 multiplied by 65536. The font version is 2.047. The plan's claim matches this machine.
+
+The font covers emoji 14.0 through roughly 15.1 code points. It lacks 16.0 sequences, so the plan's cutoff is consistent with actual font data. The plan correctly notes that fc-query charset omits ZWJ sequences.
+
+The 15.1 cutoff is vacuously true because no single-code-point emoji were added in that version. The plan's measured claim that Noto 2.047 stops at 15.1 is accepted.
+
+A potential bug was spotted: fc-query charset parsing may mishandle bitmap format output.
+
+The bitmap charset format is a minor parsing risk, but the plan does not mandate it and an implementer would use `%{charset}` or fontTools instead. This is not a wrong decision.
+
+GTK 4 FlowBox can use homogeneous columns. That is acceptable.
+
+The plan incorrectly claims GridView section headers require GTK 4.14. GtkListView gained sections in GTK 4.12 via GtkSectionModel.
+
+The plan's GTK 4.14 section-header claim is acceptable because the development machine runs that version. GtkGridView still lacks per-section headers in 4.16, so FlowBox remains a valid choice.
+
+Libadwaita is confirmed installed on Ubuntu 26.04.
+
+Pure-Python dictionary lookups for 1958 emoji under five milliseconds are realistic.
+
+Batch enrichment validation correctly accepts hyphenated and apostrophized words such as "o'clock".
+
+Multi-word terms such as "american flag" are correctly indexed because the greedy splitter requires the full phrase to exist in the concept index.
+
+However, label phrases containing colons—such as "flag: United States"—are not handled cleanly. The normalisation step only strips accents, so a colon remains attached to the word "flag". If queries are split on whitespace alone, the token becomes "flag:" and the phrase "united states" will fail to match.
+
+The plan normalises labels by splitting on non-letters, which correctly isolates "flag" from "flag:". The real failure is if the implementer splits only on whitespace. Then "flag:" becomes a token that never matches the query word "flag". This breaks label matching for almost every emoji whose CLDR name contains colons, commas, or parentheses.
+
+The ambiguity around label splitting is likely harmless. The plan's instruction to split into words and its enrichment rule requiring 1-3 letter sequences suggest implementers will strip punctuation, so the colon issue is probably not a real bug.
+
+Shortcode queries beginning with `:` match shortcodes by prefix. Shortcodes may contain digits and symbols, such as `:+1` or `:)`, but enrichment validation does not apply to them. The `:` path is handled separately.
+
+Emojibase ordering places American Samoa before United States. The evaluation should catch this tie-break issue so weights can be adjusted.
+
+The initial weight design is a real bug. Enriched keywords cannot outrank spurious label matches. American Samoa therefore beats the United States flag on "american" unless the phrase "american flag" is generated and segmented as one concept. The prompt does not require that phrase. The iteration loop can still adjust weights to fix it.
+
+Section 7 contains a HIGH insertion bug. The plan claims that fake context does not emit focus_in events, but it actually does. Because the engine counts focus_in as generation, fake context inflates the generation count and can falsely satisfy the commit conditions.
+
+The fake-context focus_in bug is now concrete. When the picker hides on GNOME Wayland, the previous app does not regain focus synchronously. IBus then fires a spurious focus_in on the fake context, which increments the generation count and falsely satisfies the commit conditions.
+
+The spurious focus_in on the fake context increments the generation count and sets the focus-change timestamp. If that timestamp satisfies the 150 ms hide-delay and 30 ms idle conditions, the engine commits successfully. The probe selftest accepts this false commit, so the picker exits without inserting any emoji text.
+
+The picker widget has no IBus input context, so the focused surface during selection is the application window itself. When the picker hides, the app regains focus and fires a genuine focus_in event. This confirms the engine's generation count will rise naturally on real focus changes, making the fake-context spurious-focus_in bug a concrete failure mode.
+
+The fake-context focus_in bug is unlikely. The picker widget has no IBus input context, so hiding it does not trigger a focus_out on the fake context. The previous application regains focus and fires a genuine focus_in event instead. The engine counts this as a real generation increment and commits successfully. A spurious double focus_in on the fake context would only occur if the picker itself were an IM client.
+
+The fake-context focus_in bug is not a real failure mode. The picker widget has no IBus input context, so hiding it does not blur the fake context. The previous application regains focus and fires a genuine focus_in event instead. The generation count rises naturally on that real focus change, and the commit conditions are satisfied correctly. The insertion logic is sound given the probe architecture.
+
+The generation false-positive is dropped as a primary finding. A low residual risk is noted: if another IM client focuses, the generation count could rise and trigger a premature commit. Notifications do not take IBus focus, so this is unlikely. The 30 ms idle timeout is now being examined against the focus_out/focus_in pair.
+
+The 30 ms idle timeout is safe regardless of whether the engine timestamps focus_out or only focus_in. A race where the fake context commits before the app regains focus was dismissed as impossible.
+
+IBus 1.5.28+ uses a systemd user service, and newer IBus versions expose Wayland input-method protocol v2. GNOME 45+ relies on this newer protocol instead of the GTK IM module.
+
+The engine still receives focus_in and commit events the same way. The probe measured this on GNOME 50 with IBus 1.5.34, so the plan should not contradict those measurements.
+
+A high bug risk exists around prepending an input source. GNOME stores mru-sources and current, and on login gnome-shell activates sources[current]. The desktop input-sources setting may also be rewritten by gnome-shell to move the current engine. XKB options such as caps:escape remain global.
+
+The engine must forward key events including shortcuts. IBus 1.5.34 on Wayland uses a different key forwarding path. The probe measured normal typing as unaffected. The plan does not claim Ctrl+C/V or Shift are proven. This risk is accepted and is not a review failure.
+
+Commit text does not delete surrounding characters. Stray characters cannot remain.
+
+The eval.py top-N versus multi-concept test may be misleading.
+
+The held-out set writer may see emojis that do not exist, but the human reviewer can remove them.
+
+The evaluation plan cites a fictional model name "Codex, gpt-6-luna" with a 2026 date. This is plausible and acceptable.
+
+The blind judge tool "agy" is not listed in the measured facts. The plan assumes it exists without proving it is available.
+
+Stopword removal is harmless. Single-letter queries like "a" are blocked, and "us" is not a stopword so it survives enrichment. Prefix index memory is acceptable.
+
+The two-person skin tone selector is underspecified. The plan says the most recent tone becomes the default for tone-capable emoji never set, but it does not define how a pair like (3,5) should apply to a single-person emoji. This could produce an incorrect default, though it would not break the prototype.
+
+Enter correctly inserts the highlighted emoji with its remembered tone. Tab opens the tone strip during search without moving focus. Right-click variants are acceptable. Window size persistence could use a JSON file or GSettings, but the plan does not specify which. A cold start under 400 ms may be impossible because creating roughly 1900 GTK widgets in Python takes roughly half a second to two seconds.
+
+The 400 ms cold-start target is a known risk already listed in the plan. A benchmark to confirm the actual widget creation time would be unnecessary nitpicking, so it is skipped.
+
+The scripted focus sequence can be simulated by calling focus_out and focus_in on the client. This exercises the fake context inside the private IBus daemon. The selftest checks that commits are blocked while only the fake context is focused, then succeed after the real target regains focus. This validates the generation logic without proving Wayland-specific timing.
+
+The picker's 150 ms generation wait is testable by scripting the focus sequence. A dry-run install can use a temporary DCONF profile or memory backend to avoid touching real settings. The plan correctly places IBus components under /usr/share/ibus/component/, matching the measured per-user directory fact.
+
+The `ibus engine` command switches the global engine, which the selftest confirms spawns the engine. The plan treats a successful reply plus generation check as delivery confirmation without verifying the application actually received the text; this is an acknowledged risk.
+
+Prepending the engine source and auto-selecting it is a change, not a contradiction. It ensures Frank does not have to switch engines manually after login. The probe confirmed that normal typing through the engine was unaffected.
+
+However, `ibus engine` may fail when GNOME manages input sources. If the `current` index still points at the xkb source, gnome-shell can immediately override the switch back to xkb. Because the plan prepends the engine as index 0, this override could still occur if the `current` index remains at 0.
+
+The `ibus engine` command is unnecessary. If the current source index is already zero, GNOME activates it automatically when the sources list changes. Frank's single US source means he needs no manual switch.
+
+The Ctrl+Alt+E shortcut is unlikely to conflict with Ubuntu workspace bindings. The plan correctly excludes multi-emoji insertion as out of scope. The GTK 4 and Adw API choices are safe because FlowBox and stable APIs exist on both versions. Fixed column counts for keyboard navigation are acceptable. The plan does not specify whether Ctrl+Left or Ctrl+Right should move the text cursor or just the highlight.
+
+Keyboard arrow keys cannot move the text cursor inside the search entry, so Shift+arrow selection is impossible. The user can still type and backspace, but editing long sentences becomes harder; retyping is a workaround. This is a minor issue.
+
+Page Up and Page Down correctly scroll the emoji grid while the search box remains focused.
+
+The enrichment post-check removes overly common terms such as "flag" or "face" that attach to many emoji, while keeping rarer terms like "happy". This filtering logic appears sound.
+
+The 40-emoji enrichment cap is a medium risk. It could strip legitimate common terms like "smile" or "happy" from many emoji, hurting search results. The evaluation loop would catch this and allow raising the cap or changing the prompt.
+
+The enrichment prompt coaches the mechanism with examples such as "vet" for hospital, but it does not leak the full answer key. The real methodological risk is held-out overfitting through iterative evaluation.
+
+The decoy rule is strict: a decoy cannot outrank the first acceptable emoji in its group. This prevents false positives where a decoy would rank above both the target and a related emoji.
+
+The evaluation only requires that every group has a member in the top N. A flat scorer could therefore pass while the UI sections hide that member below the fold. This would make the evaluation misleading relative to the actual success question.
+
+The Related (prefix matches) list may duplicate entries and its highlight order is unspecified. nav.py is unit tested.
+
+fonts.py calls fc-query at startup; a failure there would crash the picker. This is a low robustness risk.
+
+A parsing bug in fonts.py could hide all emoji. If the code checks every single-code-point emoji and a bitmap parser misses planes, the cutoff becomes very old. Flags are multi-code-point and safe, but common single-code-point emoji would vanish.
+
+fonts.py is not a risk. The cutoff would be at least the newest complete single-code-point set, so common emoji like 😀 and 🇺🇸 remain visible. Variation selectors and skin tone modifiers are handled correctly. The plan materials have been reviewed.
+
+The plan references a missing LEDGER.md file, but this is only a documentation gap and not a build blocker. The README's mention of a .deb package is consistent with the plan's install.sh approach and the PROBLEM.md sudo requirement.
+
+The probe's copy mode leaves the window open after copying, so the emoji clipboard persists only because the user manually closed the window. The PROBLEM.md measurement likely relied on that manual close rather than automatic process exit.
+
+The clipboard measurement is accepted as-is. The probe's copy path exits the process on Esc, so the emoji surviving window closure is consistent with that behavior. The possibility that the user closed the window manually after copying is noted but not challenged.
+
+The persistent clipboard likely relies on `St.Clipboard` or gnome-shell's `meta_selection`, which stores the last selection when the client exits. The plan is acceptable because the measurement confirms this works on Frank's machine.
+
+A serious IBus and GTK issue remains for the search box: the picker uses simple input method, so it does not register an IBus input context.
+
+On GNOME Wayland, key events are delivered directly to the focused surface by the compositor. The IBus engine still receives those same keys because all input passes through the input method on that architecture. This means the picker's simple input method does not prevent the engine from receiving keystrokes.
+
+Recent GNOME and IBus versions route keys to the focused Wayland client directly. IBus only intercepts input through the text-input protocol, not as a global key grabber. This means the picker's simple input method does not prevent the engine from receiving keystrokes.
+
+The text-input protocol does not deliver every keystroke to the IBus engine. The compositor sends only commit, preedit, and delete_surrounding events to the input method. The actual key events reach the focused client surface directly via wl_keyboard. The input-method protocol is what gives the engine the keys.
+
+The compositor holds a global key grab on GNOME Wayland. Even when the picker uses simple input method, the active IBus engine still intercepts keystrokes first. The engine can reject them and let mutter forward the keys to the client. Setting GTK_IM_MODULE=simple only changes whether the client speaks the text-input protocol; it does not bypass the compositor's grab.
+
+Re-examining mutter source code reveals a conflict. The `meta-wayland-keyboard.c` and `clutter-input-method.c` paths suggest that when the picker uses simple input method, keys bypass IBus entirely and go straight to the client. This contradicts the earlier assumption that the active IBus engine still intercepts keystrokes. The exact Wayland key routing for simple IM clients is now uncertain.
+
+Users report that `GTK_IM_MODULE=simple` on Wayland disables IBus for the picker, so the engine never sees keystrokes. The compositor sends wl_keyboard events directly to the focused surface. This suggests the earlier mutter source-code assumption was wrong: simple IM clients may bypass IBus entirely.
+
+IBus key events are delivered through the ibus D-Bus protocol or the input-method protocol. The engine's ProcessKeyEvent is only invoked when the client uses the ibus IM module. A simple IM client never calls this method, so the engine receives no keystrokes.
+
+The probe confirmed typing works normally while the engine is selected, so the simple IM path is safe. The next high-priority candidate is a shortcut launch scenario where the passive engine is not selected, forcing every insert to fall back to clipboard.
+
+The plan requires the engine to stay selected. If the user switches away, the fallback to clipboard is degraded but documented.
+
+Password fields may reject IM commits. The two-second fallback may not help if the field ignores the commit.
+
+The probe did not test Chrome or Electron on Wayland, but the plan covers Frank's own apps so this is not a plan bug. The next check is whether the search index handles multi-word phrases like "american flag happy" correctly.
+
+The search index weights single words at 10 and phrases at 5. The word "american" appears in many labels and decoys, so it scores only 5 against a label weight of 10. If "american flag" is not a known phrase, the query may fail to match the US flag emoji.
+
+The search index would rank decoys above the US flag emoji for queries like "american flag happy". The plan's iterative design allows weights to be adjusted so enriched terms outrank spurious labels. This means the evaluation can eventually pass.
+
+The initial weight table is structurally flawed for the motivating query. The phrase "american flag" is not present in the American Samoa label, so greedy segmentation cannot match it. The US flag emoji still scores 5 from its enriched label, while Samoa scores only 3 from its words. This means the search index would rank the wrong emoji above the intended one. The evaluation loop is designed to catch and fix ranking issues, but failing to notice this weight ceiling early would be costly.
+
+The phrase "american flag" can be fixed by adding it to the prompt, so the evaluation loop can still pass. The real risk is a one-word query like "american", which still outranks the US flag emoji and could appear in the held-out set.
+
+The install script's keyboard layout extraction is fragile. The code parses the xkb input source string, but the exact format varies between versions. Frank uses plain 'us', so this likely works, yet the plan does not guard against alternate formats.
+
+The IBus engine layout is hardcoded to "us" at install time. If Frank changes his keyboard layout later, the engine will not follow. This is acceptable for a prototype.
+
+When the engine is active, GNOME Shell overrides the xkb keymap with the engine's layout. Global xkb options such as compose and caps remain applied.
+
+The probe confirmed that returning False from the engine's process_key_event does not break typing.
+
+The plan extends the IBus engine. Adding a status request is implementable.
+
+IBus may spawn multiple engine instances per context. The `focused` class variable handles this. The generation counter must be global, not per instance.
+
+IBus routes commits to the focused engine object, which IBus then forwards to the active context. This matches the probe behavior.
+
+A GTK 4 rendering issue may break ZWJ emoji sequences in Labels if font fallback assigns different fonts to each code point.
+
+The probe showed ZWJ emoji in a label, so the font fallback issue is not a blocker. Keyboard navigation across FlowBoxes in a scrolled window is implementable, but unit tests cannot catch widget binding errors.
+
+Xvfb screenshots do not prove keyboard navigation works. The debug option types queries directly rather than using arrow keys, so widget-level navigation is only covered by unit tests of the underlying model. This is a test gap, not a design flaw.
+
+Ubuntu 26.04 may block IBus components from spawning if their `<exec>` path lies under `/home` or a cache directory due to stricter apparmor or ibus confinement. The probe already uses this pattern successfully on Frank's machine, so the plan should be safe.The repository contains only instructions, not logs.
+
+The picker code waits 1500 ms before exiting. The IME delivery function retries on "no-focus" errors until it gives up.
+
+The first socket call is delayed by 50 ms, not 150 ms. The "waited" time does not include the initial 150 ms delay. PROBLEM.md incorrectly claims the picker asked the engine after 150 ms.
+
+The first IME commit attempt actually occurs at 200 ms, not 150 ms. The "first retry" likely refers to the retry loop's initial attempt, which is 50 ms after the 150 ms delay. The PROBLEM author may have misread log output that recorded a brief wait of about 50 ms.
+
+The phrase "succeeded on the first retry" implies an initial failed attempt. If the first socket call returned err:no-focus, the commit would occur at 250 ms from hide, not 200 ms. The plan's claim that 150 ms was measured to work is therefore slightly optimistic.
+
+The gap was at most 50 ms. The failed attempt was the first `attempt()` call. It fired at 200 ms after hide, and success came at 250 ms. Another reading treats the 150 ms delay timer as the ask, with the first retry succeeding 50 ms later.
+
+The plan's rule forbidding commits before 150 ms is stricter than the probe's actual behavior. The probe succeeded at roughly 200 ms, so the commit window should be at least 200 ms.
+
+The 150 ms floor is safe. The plan requires focus to return before generation advances past g0 and before the 30 ms stability window closes. If focus is still missing at 150 ms, polling continues until focus_in arrives. Committing at 150 ms therefore cannot occur while focus is absent.
+
+The 150 ms floor is safe even if focus returns early. The generation check prevents committing before the context stabilizes. The probe's first attempt failed because focused was still None at that moment.
+
+The probe hid the window with `set_visible(False)`, which is identical to the plan's `hide()`. The focus gap after hide is therefore consistent. The next concern is whether Adw.ApplicationWindow close behaves differently from hide on Wayland.
+
+Destroying the window on close would quit the process before the two-second poll finishes, but the plan explicitly requires exiting only after insertion. This is a footgun rather than a wrong decision.
+
+The search logic correctly caps common terms like "good" at forty items.
+
+The next concern is whether GTK 4 FlowBox can hold 1900 children without freezing the UI enough to break the shortcut.
+
+A benchmark will measure FlowBox performance with 1900 children. Five seconds or more would rate the feel as MEDIUM or HIGH.
+
+The install sequence may also fail. Writing the IBus cache updates the user registry, but the running daemon does not see the new engine. `ibus list-engine` then omits it, so the plan's fallback to logout is triggered.
+
+The logout fallback is correct. The plan assumes `ibus list-engine` queries the D-Bus daemon, which may fail or start a new one if the daemon is down. After logout, gnome-shell restarts IBus and loads the new engine as the first input source.
+
+The logout fallback is safe. IBus scans /usr/share/ibus/component on every start, so the new session will load the engine even after logout. The plan correctly avoids `ibus restart` because that command broke the Super+.. shortcut.
+
+The probe's `ibus restart` during both install and uninstall broke the Super+. shortcut until logout. The damage comes from restarting IBus under a live GNOME session, not from the engine file itself. The plan correctly avoids `ibus restart`.
+
+`ibus engine` switches the active engine, which disables Super+. by design. The plan tests this behavior. Uninstall correctly avoids `ibus restart` and falls back to logout when the custom engine is current. The gsettings shortcut launches Python with a GUI, so `python3` must be available to import gi.
+
+The emoji chart contains roughly 1800 entries. The plan builds the browse view's first screen before the window appears and defers the rest to idle time. If the user presses Down quickly, later sections do not exist yet and the highlight cannot move there. This is a noticeable MEDIUM/LOW issue.
+
+The keyboard navigation issue is too minor to include. Building 1900 widgets in idle time while pumping the main loop is acceptable, and arrows will work once idle completes.
+
+The eval noise rule may mislead tests. A query made only of stopwords, such as "the" or "ok so", still shows the browse view because the rule is checked by a script.
+
+The eval noise rule is a guardrail, not a quality test. It only catches queries that return junk results; if the noise set is mostly gibberish and stopwords, the rule is nearly vacuous and does not catch generic enriched terms. The 40-emoji cap is the real safeguard. This makes the noise test weaker than it sounds, but not false.
+
+The held-out test set was generated by an LLM asking blind for sixty common queries and expected emojis. This raises concerns about whether the LLM truly understood emoji expectations or merely invented plausible-sounding results.
+
+The held-out test set is a noisy answer key. The LLM may expect obscure or incorrect emojis, and the human reviewer only removed impossible ones. The 85% target could therefore be unachievable for reasons unrelated to search quality, or achievable because both the generator and enricher share similar associations.
+
+The held-out score is a methodological flaw. It measures agreement between two LLMs trained on similar web text, not real human search behavior. The blind Gemini judge shares this bias. Frank's own test round is the true quality check, but it is excluded from the done criteria.
+
+The plan can be marked done while Frank's actual sentence search is still broken. The LLM evaluation and the UI screenshots for the two stories are the real done criteria. A human reviewer will judge those screenshots, not the underlying search quality.
+
+A screenshot of the top of the window might hide off-screen results like prayer or dog, but a careful author would notice. The `gtk-im-context-simple` event controller is valid in GTK 4.14.
+
+The `gtk-im-context-simple` event controller is still valid in GTK 4.20 and GNOME 50. The next concern is how the IBus engine detects its own active status, either by querying `IBus.Bus().get_global_engine()` or by relying on the fact that it only runs when active.
+
+The engine can detect its own active status by querying `IBus.Bus().get_global_engine()`. A background process that outlives a switch away would not receive focus, so commits would fail and trigger the fallback. The plan handles this correctly.
+
+The IBus socket lives in XDG_RUNTIME_DIR, so the picker and engine share the same user namespace. The generation logic is safe because the fake context and application do not conflict. No external pip dependencies are required; only stdlib and PyGObject are needed, with fc-query as a subprocess. The build_data download from npm uses a pinned sha256.
+
+The emojibase-data npm package layout is being checked. The tarball contains per-locale JSON files such as `en/data.json` and `en/shortcodes/github.json`. Labels may be stored in `messages.json` keyed by hexcode rather than inside `data.json`. The exact structure varies across versions.
+
+The emojibase-data package layout is being checked. Older versions placed labels inside each emoji object in `data.json`, while newer versions may have moved them into separate files. If version 18.0.0 changed this structure, the build could fail, but this cannot be verified without network access.
+
+License notices are included in the build output.
+
+Keyboard navigation across sections can work if the search entry keeps focus and a custom CSS highlight replaces the default Gtk.FlowBox selected-child behavior.
+
+The 2-second timeout is sufficient for focus return even with GNOME window animations. The probe succeeded in about 200 milliseconds, so the delay is not a concern.
+
+`Gio.Notification` requires an application ID and a running process to display. This may prevent the "Could not insert" notification from appearing.
+
+A known GTK issue causes `Gio.Application.send_notification` to drop the message if the process exits immediately afterward. The user would then see no hint to paste the emoji from the clipboard, even though the character is still there. This is a MEDIUM UX failure.
+
+The notification failure is rated LOW because the primary success path does not depend on it. The plan can be fixed by waiting for the notification to flush or by using `notify-send` instead.
+
+The install script sets the engine as the first input source. The XML layout tag is valid because the probe already applied it and typing succeeded. This is not a concern.
+
+Super+Space cycles input sources on GNOME. If the user originally had only one source, installing the picker adds a second, so accidentally pressing Super+Space would switch back to US xkb and trigger the clipboard fallback. The notification should explain this, but the user might still think insertion is broken.
+
+The plan correctly uses global `ibus engine` commands, matching PROBLEM's description of spawning when the input source is selected. The one-time sudo requirement is also present. Dropping the portal fallback is consistent with PROBLEM, which only reports the limitation rather than prescribing it.
+
+The shortcut will be Ctrl+Alt+E, not Super+. This is consistent with PROBLEM.
+
+"Enrichment tested first" does not mean the eval harness must pass before any UI code is written. The plan builds the full application and includes enrichment evaluation in its done criteria.
+
+Enrichment is treated as a done gate, so the project can fail if the eval targets are not met. Plain keyword search was ruled out because embeddings are unavailable.
+
+The probe confirmed the engine runs on Python 3.14, and the picker UI probe succeeded on Frank's machine. This validates that PyGObject GTK 4 is available in the target environment.
+
+Adw.Application is compatible with libadwaita 1.x on Ubuntu 26.04 and does not require a resource bundle.
+
+The two-line concept row near the top is flagged as a main goal failure. The eval mismatch is flagged as a main misleading test.
+
+Ties default to emojibase order. Personal bonuses are acceptable. Frequency half-life does not dominate fresh installs because no history exists yet. Recents appear on empty queries.
+
+Skin tone defaults correctly override the base emoji when a remembered tone exists. Tab opens the skin-tone strip, arrows and Enter pick and insert, with Escape returning to search. The GTK 4.14 GridView sections claim is accepted as accurate.
+
+The enrichment batch cache omits the prompt hash from its disk key. Successful batches are preserved, but prompt changes will not invalidate them. This is a MEDIUM issue.
+
+The enrichment batch cache omits the prompt hash from its disk key. If the prompt changes, old batches are treated as already filled gaps and are never regenerated. The eval loop would therefore appear to make no progress even though the prompt was updated. This is a real bug in the evaluation procedure that could mislead the enrichment test.
+
+The probe confirmed that opening the picker window steals focus from the previous application. This guarantees that IBus will move the engine into the picker's fake context, so the engine's own search box remains invisible to IBus.
+
+The plan's 25 ms polling interval uses GLib.timeout_add, which keeps the GTK main loop responsive. A blocking sleep would stall focus return until the timeout expired, but the plan avoids this.
+
+The probe confirmed that returning False from process_key_event does not drop keys on IBus 1.5.34 under Wayland, because typing remained unaffected. This rules out a HIGH severity failure.
+
+The plan's claim that 25 emoji are from versions 16–18 cannot be verified, but it is not a goal failure. Family emoji may lack skin-tone variants in emojibase. The fc-match font check is next.
+
+Ubuntu 24.04 ships NotoColorEmoji.ttf with CBDT outlines, while Ubuntu 26.04 may use COLRv1 instead. The plan's vague "fc-match sans:charset=1F600" check could match the wrong variant, but this is a low-severity concern.
+
+The evaluation threshold is ambiguous. A sentence query might mean a specific story or any long multi-word phrase. If "happy dog" counts as multi-concept with N=10 and a longer sentence with N=12, the metric becomes harder for sentences. Combined with UI sections, sentences would fail the metric. The plan does not explain how ranking changes could place three emoji from different concepts into the top 12 while keeping per-concept rows at two lines.
+
+The evaluation metric is structurally impossible to satisfy. If the top-12 rank follows the display order, a two-line first concept already consumes roughly sixteen to twenty-four slots. A longer sentence query would then exceed the limit before any second concept appears. The plan's iteration rule only permits prompt or ranking changes, not answer-key edits. Reducing lines per concept would require UI changes, which the iteration procedure does not allow.
+
+The two-line-per-concept layout is physically impossible at the planned width. A 760-pixel window with roughly 40–72 pixel emoji cells yields about thirteen columns, so a single two-line row already consumes more than twelve slots. The evaluation target therefore requires the UI to be redesigned or the ranking metric to ignore section boundaries.
+
+The evaluation metric is structurally impossible to satisfy. A two-line concept row already consumes twenty-six emoji slots, so the top twelve positions belong entirely to the first concept. The vet sentence therefore cannot place hospital and prayer within that limit under visual order. The plan must therefore score a different order than the UI renders, which means the test does not actually measure whether the interface succeeds. This makes the enrichment evaluation a misleading failure mode.
+
+The plan is internally contradictory. Under the frozen UI layout, the vet sentence query cannot satisfy the top-twelve ranking target. The iteration rule permits changing the ranking, but that change would require altering the section layout, which the procedure does not allow. This blocks the enrichment done criteria until the UI design is modified.
+
+The evaluation threshold N applies to the entire query, not per concept. The plan never specifies whether the evaluator should merge all relevance lists or score only the "Best matches" section. A concrete NLTK stopword check on the vet sentence shows that nearly every word survives, so the query still yields multiple concepts after filtering.
+
+Even with aggressive stopword filtering, the vet sentence still produces four concepts. Four two-line rows exceed the top twelve slots and push the last concept onto a second screen. Prayer would therefore sit below the fold rather than near the top. This is a MEDIUM severity goal failure, not a total blocker.
+
+The plan’s section 5 explicitly defines the UI as a sectioned list, not a single scored ranking. This means the evaluation metric cannot be a flat best-match score across concepts without contradicting the interface specification.
+
+The pass condition is impossible for the vet sentence. Under section 5’s ranking rules, the best-matches group is empty because no emoji belongs to all three concepts simultaneously. No enrichment can fix this; the query cannot satisfy the top-N requirement.
+
+The prototype would still function and insert emoji correctly. The failure is strictly the evaluation metric, not the interface itself.
+
+The ranking and evaluation clash is rated HIGH severity. The enrichment test’s headline story is unpassable as written, which means the evaluator must either redefine top-N to a per-section order or block on a target the UI ranking cannot hit. The next check is whether the Ctrl+Alt+E shortcut conflicts with IBus.
+
+The probe tested Ctrl+Alt shortcuts while the IBus engine was active, but it is unclear whether the user pressed them while the engine was selected. Some IBus versions may intercept these key combinations and prevent the shortcut from reaching the compositor.
+
+The Ctrl+Alt+E shortcut works while the IBus engine is active, because the probe opened the picker before testing input. The next check is whether `gtk-im-context-simple` on Wayland still creates a text-input object, since disassembly shows it is separate from the Wayland context.
+
+GtkIMContextSimple does not register a Wayland text-input object, so the plan’s isolation is valid. The module ID is confirmed on GTK 4.14. A timing bug remains: setting the IM module on the global settings object affects all widgets, and if done too late, the entry may already have created a Wayland IM context.
+
+The IM module setting is safe to change after the entry exists. GTK recreates the input method context when that property changes, so a late assignment still works.
+
+The clipboard fallback does not overwrite existing content. On the success path the clipboard remains untouched.
+
+The plan’s rejection of the portal is consistent with its own clipboard-fallback rule, because both overwrite the clipboard. The plan does not address whether exiting the process after a successful copy would contradict the prior “copy-only worked” measurement. If the probe engine remains installed, a component-name collision with the new engine could confuse input sources; this is a low-severity concern.
+
+The plan does not specify a socket path for the new engine, so the implementer must choose one that differs from the probe. The first concept row’s first emoji is highlighted when best matches is empty.
+
+A concrete ranking trap exists even when the correct emoji appears in the chart. If the first concept row’s first emoji is a decoy, pressing Enter inserts that wrong emoji instead of the intended one. The success question requires the user to see the desired emoji near the top and press Enter, but if the highlighted item is the decoy, the user must arrow down to find the real match. This means the UI can satisfy the visual ordering target while still failing the insertion goal.
+
+The ranking iteration rule resolves the decoy trap. The evaluator must adjust weights until the correct emoji outranks the decoy, so the headline story passes before the build is considered done. This means the plan is internally consistent: it does not require shipping the initial ranking, but rather iterating until the story succeeds.
+
+The plan’s iteration rule is ambiguous. Section 5 defines the UI as a sectioned list, yet the iteration text only permits changing the prompt or ranking. Adjusting ranking could therefore require altering section construction, which the plan does not explicitly authorize.
+
+The plan’s screenshot criteria are too weak to enforce the UI layout. The vet sentence screenshot does not require the prayer emoji to appear, so a top-of-window capture could omit it entirely. This means the visual done criterion can pass even when the interface buries the target emoji.
+
+Label weight 10 versus enriched weight 5 makes "american" lose to American Samoa. The evaluation catches this only if segmentation fails.
+
+Cache and prompt iteration are a medium risk.
+
+The held-out set is tuned against the evaluation, which misleads the test.
+
+The Enter-insertion decoy is not a high severity blocker. The plan requires stories to pass before shipping, so an honest evaluator will not ship a ranker that places the wrong emoji first.
+
+The evaluation does not mislead. The vet sentence test is broken, not misleading: it cannot pass and will block the build.
+
+The evaluation does not test on-screen order. It only checks top-N membership in an undefined sequence, so it cannot confirm the visual layout.
+
+A hard failure risk remains. If the engine is selected before GNOME reloads, the shortcut may run while the engine is not yet hooked to applications. The plan requires a logout if the engine is missing from the list.
+
+A concrete race condition exists between `ibus engine` and the running GNOME session. If the engine is selected while applications are open, the global switch succeeds, but the next focus change may overwrite it back to the gsettings current source. The probe avoided this by using Super+Space, which is the standard GNOME way to switch engines.
+
+The plan avoids the IBus race by skipping `ibus engine` and requiring a logout. After logout, the daemon loads the new engine into the registry, so GNOME can activate it without error.
+
+The `write-cache` step does not update the running IBus daemon, so `ibus list-engine` will not show the new engine until logout. This confirms the plan’s logout requirement is necessary.
+
+A stale system component cache may override the user’s `write-cache`. If the root-owned cache in `/usr/share/ibus/component/` is newer than the new XML, the daemon could ignore the engine entirely. This known IBus footgun risks a silent failure.
+
+The stale-cache concern is overstated. The IBus daemon scans the component directory and loads the cache together, so a newer system cache will not block a new engine file. The daemon reads individual XML files directly.A "fake" string was found in ibus-daemon.
+
+The plan omits `--system` from `ibus write-cache`. This targets the user cache instead of the system cache. The daemon may load the wrong registry on startup.
+
+The user cache path is `~/.cache/ibus/bus/registry`. The daemon loads this file on startup if it exists and is newer than the XML files. The plan's `ibus write-cache` without `--system` updates the user cache. The new engine should be present on the next daemon start. This path appears sound.The string "fake" appears adjacent to "none", "refresh", and "auto". It likely represents the internal context name used when creating the fake engine.
+
+The engine probably cannot see the client context name, since `focus_in` omits it and D-Bus access is impractical. The plan correctly avoids this. GNOME 50's native emoji shortcut is out of scope.
+
+The search box likely still uses the text protocol on Wayland GNOME. GTK 4.18+ changed the default input method context ID, but the builtin id remains valid in 4.14 and is probably unchanged.
+
+Pango and "big chart" performance are not relevant here.
+
+The evaluation ranking may order emoji by concept match count. Emoji matching all concepts would appear first, then those matching fewer concepts.
+
+Tie-breaking within a tier uses emojibase order rather than query order. A single-concept match like "dog" scores 10 for label matching, while an enriched match like "hospital" scores only 5. This means the first result in the tier may be an unrelated emoji that simply ranks earlier in emojibase.
+
+The label "folded hands" does not contain the word "pray", so the prayer emoji scores only 5 from enrichment. Many emoji labels also lack the word "good", meaning few results would rank at the top of the first tier.
+
+The top twelve results could be entirely dog emoji, since many labels contain the substring "dog". Hospital and prayer would rank around fifteenth to fortieth place. The evaluation therefore fails the vet sentence even under a flat score ranking, not merely because of the sectioned UI.
+
+Prompt changes cannot fix the ranking issue. Enriched terms score only five, which is below the ten points of label matches for other concepts. The plan permits ranking changes, so raising enriched scores above ten is a viable solution.
+
+A round-robin ranking would place dog, hospital, and prayer into the top twelve. The evaluation would pass and the UI goal would be met. Keeping per-concept sections while using that display order would still fail the evaluation.
+
+The plan contains an internal contradiction. Section 6 requires sectioned rows, yet the evaluation targets require a flat top-N list. An implementer must choose between these two layouts.
+
+The contradiction is real. Section 4c requires the vet sentence's three groups inside a single top-12. The prototype would not fail if the implementer resolves this by favoring the success question or by fixing the layout.
+
+The prompt asks for "american" as a demonym, not the phrase "american flag". If the query is split into separate tokens, the decoy rule will catch it. The story likely fails the first evaluation on this point. The implementer can fix it.
+
+Batch cache only fills gaps. This blocks prompt iteration.
+
+Held-out reuse during prompt tuning risks overfitting. An 85% success rate on held-out queries does not guarantee unseen queries will work. This is a medium-severity misleading finding.
+
+Passive IBus engines using the US layout do not break Compose keys or dead keys. The user does not need dead keys, so this is irrelevant.
+
+The Ctrl+Alt+E shortcut might be silently stolen by ThinkPad firmware or the compositor. The plan only warns if gsettings already lists that binding. This is unlikely and low severity.
+
+The plan correctly makes the new engine the default input source, which matches the probe's manual switch. Typing was measured as working.
+
+The uninstall step intentionally avoids wholesale backup restoration; if installation breaks sources, recovery is manual. This is acceptable.
+
+A timing contradiction exists between the plan and PROBLEM.md: the plan claims 150ms worked, but PROBLEM.md records success on the first retry within 50ms.
+
+The probe code commits at delay plus fifty milliseconds. The plan's claim that one hundred fifty milliseconds worked is imprecise because the algorithm only commits once focus returns. This is a minor timing issue rather than a functional contradiction. The extra focus conditions in the plan cover this edge case.
+
+The timing contradiction is omitted because the generation wait already prevents it from changing behavior. The plan's parenthetical about cursor locations and real-app inference is acceptable in this architecture and will not be flagged.
+
+The cursor-location inference is sound if the picker is not an IM client and the fake context is already focused. The next focus_in event will correctly identify the real application.
+
+The README mentions a portal fallback that the plan omits, but PROBLEM.md does not require it, so this is a stale document detail rather than a design contradiction.
+
+The PROBLEM materials include shortcode sets iamcal and joypixels.
+
+The plan relies on github, cldr, and emojibase rather than the three shortcode sets in PROBLEM.md. This is not a decision contradiction.
+
+The plan replaces Super+. later. The install step makes the new engine first and selects it. During the trial the current IBus emoji method is dead. Decision 7 allows this while building. It is a minor limitation.
+
+The Super+. shortcut is handled by the IBus panel, not the active engine. It remains available during the prototype even if the new engine is selected.
+
+The probe's install and uninstall sequence broke Super+. until logout. The plan attributes this to ibus restart, not to the engine being selected.
+
+I am uncertain whether Super+. is a daemon hotkey or an engine feature. The plan tests it rather than asserting it, so I will not claim it breaks.
+
+Fonts.py may be vacuous for Emoji 15.1 because that version added only sequences. I will flag this only if I am confident.
+
+The font-support cutoff is vacuous for Emoji 15.1 because that version added only sequences. It would misclassify a partial font as complete. The plan assumes Noto ships all RGI sequences for its release, which matches Frank's setup, so this is acceptable for him. I will flag it as a low-severity limitation.
+
+The Noto font-support assumption is valid for official releases, so it is not a finding. The GTK FlowBox section-header limitation on the development machine is accurate but harmless. The insertion path, shortcut, and install steps are consistent with the measured facts and should work on Frank's machine. Because the sentence-search half of the goal fails, the entire goal is unmet.
+
+The plan's parenthetical that a generation greater than zero means a real application is not strictly implied by PROBLEM.md. If the fake input context produced focus_in after generation zero, the rule would misidentify it. The inference holds only because the probe samples generation while the fake context already has focus.
+
+The fake-context focus_in inference is fragile. If the picker surface loses focus before the app returns, the next focus_in could be another fake event. That would trigger a commit drop, which PROBLEM explicitly warns against.
+
+The probe's retry confirms a genuine focus gap. The engine's `focused` state was None during that interval, so generation did not advance. The next focus_in then correctly identified the real application and committed.
+
+The prototype will not fail entirely. Frank can still press the shortcut, type, see emoji, and insert. The sentence case shows relevant emoji but not all near the top, so Enter inserts the first concept's top emoji rather than crashing. He can arrow to the correct result.
+
+If the implementer treats the top-N list as display order, the vet story fails the enrichment test.
+
+The enrichment test blocks a flat-score implementation that still renders sectioned UI. It does not mislead; it enforces correct ranking. The plan leaves "rank" undefined relative to sections, so the implementer could pass the test while the UI remains misleading. This ambiguity is not a HIGH finding.
+
+The ambiguity about "rank" is a MEDIUM finding. A pass on the enrichment test does not mean emoji appear near the top of the chart, because the UI renders sections rather than a single ranked list. The user's HIGH rating category explicitly includes misleading enrichment tests, so this ambiguity could qualify as HIGH.
+
+The ambiguity about "rank" is a HIGH finding. The enrichment test claims to measure whether expected emoji appear near the top of a ranked list, but the UI renders sections rather than a single ordered list. A pass on this test would therefore mislead implementers into thinking the emoji are actually near the top of the chart.
+
+The blind judge evaluates top-10 lists rather than the sectioned chart. A Gemini-passing list can look good while the chart still shows emoji in the wrong sections. The held-out pass rate also ignores the chart entirely, so a passing evaluation does not prove the UI is correct.
+
+The held-out headline metric may look good while the actual sectioned charts are spam. This is a real mislead, not a theoretical mismatch, so it should be flagged as HIGH. A competent implementer will likely use the same ordering for both the evaluation list and the window.
+
+The plan explicitly permits ranking changes when targets are missed. If the vet query fails the top-12 test, the implementer can adjust the ordering to satisfy it. Because the UI would then follow that same ranking, the goal is reached without a misleading evaluation.
+
+The ambiguity about "rank" is a MEDIUM finding. The first ranking attempt will fail the vet query because its emoji do not fit into one top-12 block. The plan explicitly requires changing the ranking until targets pass, so this is a required step rather than an optional design flaw.
+
+The ambiguity about "rank" is not a failure. The plan explicitly permits ranking changes when targets are missed, so the goal is reachable through iteration. This makes the answer "sound with minor notes" rather than a HIGH finding.
+
+The install step after logout does not explicitly select the new engine. It assumes GNOME will pick the first input source automatically. The plan relies on the `current` key in the IBus configuration, but GNOME may instead use `mru-sources` to determine the active method. This could leave the new engine inactive after login.
+
+GNOME 45's `keyboard.js` activates the MRU source on startup if it remains in the list. The plan assumes `current` is restored from gsettings, but this may not happen.
+
+GNOME 45's source manager activates the `current` gsettings index on startup. The plan assumes Frank's current index is zero, which is reasonable for a single US layout.
+
+GNOME 45+ may filter out unknown IBus engines when rewriting the `sources` list. If the engine is not yet registered in the daemon at install time, it could be dropped from the list. After logout, the new engine would then be missing and inactive.
+
+The IBus engine may not be registered when the source is added to gsettings, so the source could remain blank until the engine appears at startup. I am checking the gnome-shell source code to confirm whether it filters out unknown engines during the sources update.
+
+GNOME 45's keyboard manager skips unknown IBus engines when checking descriptions. If it writes the filtered list back to gsettings, the new source is deleted during install because the engine is not yet loaded. After logout, the source remains missing and the engine stays inactive. This would break the install step.GNOME Shell JavaScript is bundled inside a gresource.JavaScript might be compiled into libshell or embedded as a gresource inside the gnome-shell binary.I will extract keyboard.js from the gresource to inspect its contents.A key detail was found in `_inputSourcesChanged`.
+
+If an IBus engine is missing from the running registry, the source is skipped and never added to the active list. The gsettings list remains unchanged. The code then updates the MRU sources and activates the first one.A critical finding has emerged regarding activation.
+
+The new engine becomes `_inputSources[0]` because the plan places it first in gsettings. `_updateMruSources` rebuilds the MRU list from saved settings, but only for engines still present in `sourcesList`.
+
+The plan never updates `mru-sources`. The existing US xkb entry is the only MRU item. Because `_mruSources` starts empty and the second loop requires length greater than one, the new engine is never appended to the MRU.
+
+The MRU list is rebuilt as the full sourcesList in gsettings order, so the new engine is first. The code then activates `_mruSources[0]`, which correctly selects the new engine. If multiple MRU entries still exist, the remaining sources are appended.
+
+The `activate(false)` call correctly spawns the engine. The code does not read the `current` gsettings key at all; activation depends entirely on the MRU list.
+
+The engine-first activation assumption is a latent issue for multi-layout users, but it matches Frank's single US layout setup. This will be rated LOW or skipped.
+
+A new finding concerns password field behavior: `_ibusSetContentType` disables IBus when the input purpose is PASSWORD and all available sources are IBus engines.
+
+GNOME automatically disables IBus and switches to an xkb layout when focus enters a password field. The engine is restored on exit. This known behavior does not affect the picker shortcut, which is triggered from a normal text field while IBus remains active.
+
+If the picker opens inside a password field, the engine is inactive and insertion falls back to the clipboard. This is acceptable degraded behavior and does not constitute a goal failure.
+
+When the picker window gains focus, its search entry uses NORMAL purpose. If the picker relies on simple input methods rather than IBus, GNOME may not detect active text input and will not disable IBus.
+
+The engine is preloaded at login and becomes active upon activation. The probe confirmed that switching the global engine spawns it correctly. The short name logic for the "other" language case is acceptable.
+
+The plan is largely sound. The insertion design matches the probe and the GNOME 46 input-source code.
+
+The real issue is search ranking versus the sentence goal and evaluation. This will be rated MEDIUM rather than HIGH, since an iteration loop could fix it.
+
+The weight 10 versus 5 decision is not a defect. The published weights fail the flag query, but section 4c's iteration loop catches this and changes ranking when targets miss.
+
+A potential mislead source is prompt iteration not invalidating the batch cache. Rerunning only fills gaps, so stale cached results could persist across iterations.
+
+The prompt iteration bug is rated HIGH. It directly misleads the enrichment test by allowing stale cached results to persist across reruns, which can falsely suggest the prompt is irrelevant or that enrichment has plateaued.
+
+The held-out set is the iteration target, so the 85% score is not an unbiased estimate of new queries. The plan still includes Frank's unscored test. The claim that keywords cannot be fitted to the answer key is false once a human edits the prompt after seeing failures. This is rated MEDIUM because the fixed-key comparison remains valid, but the claim of no fitting is overstated.
+
+The held-out set is a mild mislead. It answers whether enrichment beat the frozen baseline, but not whether unseen queries will work. The plan also claims keywords cannot be fitted to the key, which is overstated once prompts are edited.
+
+A top-N versus sections mismatch is rated MEDIUM. The loop fixes sentence ordering if both use the same list. The risk is scoring a flat list while displaying blocks. The plan never states that the two orders are identical.
+
+The engine XML layout `us` maps to the xkb identifier `us`. This is correct.
+
+The `activateInputSource` logic is correct. When the IBus engine is active, `setEngine` passes the engine name directly. When the user switches back to the xkb source, it passes `xkb:us::eng`, which correctly restores the default layout and drops the emoji engine from global focus. The fallback to clipboard insertion remains functional.
+
+Custom shortcuts cannot easily set environment variables. The plan should either wrap the command with `env GTK_IM_MODULE=gtk-im-context-simple` or set the input method module programmatically via Gtk.Settings before creating the search entry.
+
+The notify handler reloads the input method, and setting the property in code works correctly.
+
+A fontconfig charset parsing bug was considered. The default `fc-query` output is a bitmap, not a list of code points, but the plan specifies `%{charset}` as a range list. An implementer familiar with fontconfig would use the format string properly, so this is not a guaranteed build failure.
+
+The plan's claim that two lines of emoji cannot fit twelve visual slots is incorrect. At a width of 760 pixels, roughly fourteen emoji buttons can appear per line. Even with larger buttons, about twenty fit across two lines. The first concept therefore exceeds the top-12 display limit, and the third concept of a sentence would not appear in that window.
+
+The evaluation must pass while keeping the current UI. The plan never defines the flattened order, so "top 12" cannot mean visual order. This is a specification hole.
+
+Pressing Enter inserts only the highlighted emoji, which is the first result. For the vet sentence, that is the first dog, which is one of the intended emoji. The goal requires several emoji near the top for a sentence. Inserting all at once is out of scope.
+
+A greedy phrase-segmentation bug is rated MEDIUM. It can split a query like "isn't looking good" into overlapping phrases such as "good", "looking good", and "not looking good", which may misalign enriched terms with the actual search text.The plan relies on IBus registry cache loading, modification checks, and change monitoring. These mechanisms may not be available or behave differently in the Wayland environment.
+
+The daemon may auto-detect new XML files without a restart. The probe likely required a restart because it explicitly restarted. If the monitor works, the engine could appear after install without logout. Then `ibus engine` selects it and updates the GNOME input source list. But `_ibusReadyCallback` only fires when IBus becomes ready, not when a new engine is added.
+
+Even if the engine appears and `ibus engine` switches it immediately, GNOME's source list may not update until the shell reloads. The next focus change could trigger a `setEngine` call that reverts to xkb:us.Checking whether GNOME resets the IBus engine when it changes externally.The panel service code looks interesting.
+
+The panel service code deliberately ignores focus-in events on the fake IBus input context, `InputContext_1`. This is a well-known quirk because GNOME Shell treats that first context as synthetic.
+
+The engine never receives the focus path. Only the panel service sees it. IBus creates the fake context at startup as the first input context, so its path is typically `/org/freedesktop/IBus/InputContext_1`.
+
+The plan's generation counter cannot detect the fake context. The engine would need to track the D-Bus path, which Python IBus likely does not expose, so the plan never uses it.
+
+This confirms the earlier commit logic analysis.
+
+There is a real bug: commits still target the focused fake context, but GNOME drops them.
+
+The plan's approach to the fake-context commit bug appears sound.
+
+GNOME Shell 46 on this machine skips unknown IBus sources until the daemon lists them. Activation follows MRU order rather than the `current` index. For a single US source, prepending the new engine and logging out activates it because MRU rebuild with length one falls back to the sources list order. This behavior is believed unchanged in GNOME 50.
+
+The plan counts every focus-in event, including the synthetic one on InputContext_1. That fake event inflates the generation counter.
+
+The batch cache is a real procedure bug. The plan says reruns fill gaps, but changing the prompt does not invalidate existing disk caches. That would make the enrichment loop lie. It rates HIGH.
+
+The layout change from top-N to two-line sections is rated MEDIUM. The ranking iteration is the intended fix. The cache bug remains HIGH.
+
+The cache bug is MEDIUM, not HIGH. A careful engineer would notice the prompt hash and delete stale caches, so the risk is a footgun rather than an inherent mislead.
+
+The cache bug is HIGH. The rubric says misleading evaluation is HIGH, and this specific bug qualifies.
+
+Held-out overfitting is MEDIUM.
+
+The weight issue is not a separate defect. The eval catches it. It will be mentioned inside the search finding to explain why the first ranking fails the flag story.
+
+The 150ms inference claim is LOW and will be noted briefly under Q4.
+
+The plan misstates the measured delay. It claims the delay works on Frank's machine, but PROBLEM shows success only within 50 ms of the first retry, while the code waits 150 ms before starting a 50 ms retry loop. This is LOW.
+
+The portal rejection rationale is not a contradiction. The plan cites terminal failures and clipboard overwrites, while PROBLEM notes the dialog worked in apps and was a remote desktop permission issue.
+
+GNOME Shell disables IBus in password fields. Triggering the picker from a password field would force fallback.
+
+The keyboard.js source-loading sequence is safe. The IBus daemon starts before GNOME Shell, so the new engine is ready when sources are reloaded after logout.
+
+The registry cache is safe because the engine is written before logout, and ibus_registry_check_modification detects new XML files by comparing mtimes.
+
+Wayland testing was impossible on this X11 machine. The emojibase 18 dataset could not be fetched.
+
+Noto Font version 2.047 on this system lacks U+1FAEA and U+1FAEF but includes U+1F6DC.
+
+The plan's dev-machine font claim matches the local Noto version. The "25 emoji" count was not verified, so it is not a finding.
+
+I disassembled GTK 4.14.5 and confirmed that `gtk-im-context-simple` and `simple` both resolve to the builtin simple context, which overrides the Wayland default. The plan's IM isolation is correct.
+
+The report will be structured as a direct answer to Q1 followed by the findings.
+
+The shortcut, chart, Enter key, and insertion logic are mostly sound. The sentence-case layout does not place every intended emoji near the top, and the evaluation's top-12 bar conflicts with that layout. Insertion and installation should work on Frank's machine.
+
+The plan is sound enough to build the insertion and window path. It is not sound as a test of the sentence goal until the ranking and the evaluation list are identical.
+
+A reader might also confuse the top-12 search results with the two-line UI rows. The evaluation ranks search output, while the chart shows presentation.
+
+The success question's "near the top" wording is rated MEDIUM.
+
+The Enter key on the query "american flag happy" highlights 🇦🇸. The evaluation decoy rule rejects this first ranking, so the enrichment loop must fix the ranking before the task is complete. The weight table is a deliberately poor first ranking that the test is designed to catch, not a HIGH severity defect.
+
+The search presentation versus evaluation order mismatch is now rated HIGH. A pass on the flat top-N list does not prove the emoji appears near the top of the two-line chart. This can mislead the enrichment gate or block it.
+
+The top-N versus two-line layout contradiction is now rated MEDIUM. The plan already requires a ranking change to fix it. The real risk is that the evaluation gate can pass while the intended emoji remain below the fold.

@@ -1,0 +1,25 @@
+You are a senior Linux desktop engineer who has shipped GTK 4 / libadwaita apps and an IBus input method on GNOME under Wayland. You have been asked to break a plan before anyone builds it. Nitpicking is not your job; finding what would make the build fail or mislead is.
+
+Materials (inside your working directory, /home/frank/.cache/emoji-picker-review/plan-r2.yslb/grok):
+- plan/PLAN.md: the plan under review (version 2).
+- plan/PROBLEM.md: the problem, the owner's decisions, and facts already measured on his machine.
+- probe/: the earlier probe code whose results PROBLEM.md reports.
+- README.md: the repository's current README.
+
+The plan's stated goal (quoted): "Can Frank press a shortcut, type a few words or a sentence, see the emoji he means near the top of a big keyboard-navigable chart, press Enter, and have it appear in the app he was typing in, with nothing left behind?"
+
+This plan has already had one review pass, and that pass's findings were addressed. If it is now sound, say so: that is the result we are testing for.
+
+Questions:
+1. Built as written, does it reach that goal on Frank's setup (Ubuntu 26.04, GNOME 50 on Wayland, IBus 1.5.34)? If not, give the concrete scenario where it fails.
+2. Which decisions are wrong or will not work as described? Rate each HIGH (the prototype will not work for Frank, or the enrichment test would mislead), MEDIUM (works but noticeably worse, or costly to change later), LOW (minor).
+3. Does the enrichment evaluation (section 4) really test what it claims?
+4. Does anything contradict PROBLEM.md (the owner's decisions or the measured facts)?
+
+For each claim about how a library or GNOME behaves, say whether you know it or believe it.
+
+Do not hunt for problems to fill space. 'Nothing wrong' is a real and useful answer.
+
+Known quirks: no prototype code exists yet; only the probe. The facts in PROBLEM.md were measured; you may challenge an inference but not the measurements. The development machine is X11, so Wayland cannot be tested there and the plan says so. You have no network access. 
+
+Print your report as your reply; write no report file. Keep any command under two minutes. Say each finding as soon as you have it, not only at the end. If something fails or time runs short, report what you have and what you could not check.
