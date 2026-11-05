@@ -35,9 +35,13 @@ run gsettings set $SRC_SCHEMA sources "$NEW_SOURCES"
 echo "   input sources: $NEW_SOURCES"
 
 step "2. Remove the Ctrl+Alt+E shortcut (others are kept)"
-NEW_LIST=$(python3 -I "$HERE/tools/gsettings_lists.py" remove-path "$(gsettings get $KB_SCHEMA custom-keybindings)" "$KB_PATH")
-run gsettings set $KB_SCHEMA custom-keybindings "$NEW_LIST"
-run gsettings reset-recursively "$KB_SCHEMA.custom-keybinding:$KB_PATH"
+if [ "$(gsettings get "$KB_SCHEMA.custom-keybinding:$KB_PATH" name)" = "'Emoji Picker'" ]; then
+  NEW_LIST=$(python3 -I "$HERE/tools/gsettings_lists.py" remove-path "$(gsettings get $KB_SCHEMA custom-keybindings)" "$KB_PATH")
+  run gsettings set $KB_SCHEMA custom-keybindings "$NEW_LIST"
+  run gsettings reset-recursively "$KB_SCHEMA.custom-keybinding:$KB_PATH"
+else
+  echo "   the shortcut at $KB_PATH is not ours; left alone"
+fi
 
 step "3. Remove the input engine file"
 if [ "$SYSTEM" = 1 ]; then

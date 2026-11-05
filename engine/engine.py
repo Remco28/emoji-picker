@@ -14,6 +14,11 @@ context whenever no app has focus, and a commit there is silently dropped,
 so the picker uses the counter to wait until a real app has taken focus
 after its own window hid. "since_ms" is the time since the last focus
 change. Every event is logged with a timestamp for diagnosis.
+
+The engine is created with has-focus-id, so IBus (1.5.27+) also says which
+client took focus; the internal context is called "fake". The status
+reports it as "client", and a commit into the fake context is refused.
+(Tested 2026-11-05 with a private ibus-daemon 1.5.29.)
 """
 import json
 import os
@@ -50,6 +55,7 @@ class State:
     last_change = time.monotonic()
     focused = None   # engine instance holding focus
     enabled = False
+    client = None    # who has focus ("fake" = nobody), when IBus tells us
 
 
 class PassiveEngine(IBus.Engine):
@@ -58,10 +64,11 @@ class PassiveEngine(IBus.Engine):
     def do_process_key_event(self, keyval, keycode, state):
         return False  # never consume a key
 
-    def do_focus_in(self):
+    def do_focus_in(self):  # older IBus, without client names
         State.gen += 1
         State.last_change = time.monotonic()
         State.focused = self
+        State.client = None
         log(f"focus_in gen={State.gen}")
 
     def do_focus_out(self):
@@ -69,6 +76,19 @@ class PassiveEngine(IBus.Engine):
         if State.focused is self:
             State.focused = None
         log("focus_out")
+
+    def do_focus_in_id(self, object_path, client):
+        State.gen += 1
+        State.last_change = time.monotonic()
+        State.focused = self
+        State.client = client
+        log(f"focus_in gen={State.gen} client={client!r} context={object_path}")
+
+    def do_focus_out_id(self, object_path):
+        State.last_change = time.monotonic()
+        if State.focused is self:
+            State.focused = None
+        log(f"focus_out context={object_path}")
 
     def do_enable(self):
         State.enabled = True
@@ -92,6 +112,7 @@ def handle(req):
     op = req.get("op")
     if op == "status":
         return {"gen": State.gen, "enabled": State.enabled, "focused": State.focused is not None,
+                "client": State.client,
                 "since_ms": int((time.monotonic() - State.last_change) * 1000)}
     if op == "commit":
         text = req.get("text", "")
@@ -101,6 +122,9 @@ def handle(req):
         if eng is None:
             log(f"commit {text!r}: refused, no focused context")
             return {"ok": False, "why": "no-focus"}
+        if State.client == "fake":
+            log(f"commit {text!r}: refused, only IBus's internal context has focus")
+            return {"ok": False, "why": "fake-context"}
         eng.commit_text(IBus.Text.new_from_string(text))
         log(f"commit {text!r}: sent at gen={State.gen}")
         return {"ok": True}
@@ -146,7 +170,16 @@ def main():
     loop = GLib.MainLoop()
     bus.connect("disconnected", lambda _b: loop.quit())
     factory = IBus.Factory.new(bus.get_connection())
-    factory.add_engine("emoji-picker", PassiveEngine.__gtype__)
+    created = [0]
+
+    def create_engine(_factory, name):
+        # has-focus-id makes IBus report which client has focus (see above)
+        created[0] += 1
+        log(f"creating engine {name}")
+        return PassiveEngine(engine_name=name, connection=bus.get_connection(), has_focus_id=True,
+                             object_path=f"/org/freedesktop/IBus/Engine/EmojiPicker/{created[0]}")
+
+    factory.connect("create-engine", create_engine)
     bus.request_name("org.freedesktop.IBus.EmojiPicker", 0)
     _srv = serve()  # noqa: F841 (keep the socket alive)
     log(f"engine started, pid {os.getpid()}")

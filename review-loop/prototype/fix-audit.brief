@@ -1,0 +1,23 @@
+You are a senior Linux desktop engineer (Python, GTK 4 / libadwaita, IBus, GNOME on Wayland) auditing a prototype that was just built from a plan. Finding defects that would make it fail for its one user is your job; style nitpicks are not.
+
+Materials (inside your working directory, /home/frank/.cache/emoji-picker-review/audit.O5lV/copy):
+- review/PLAN.md: the plan it was built from (version 3).
+- review/CHANGES.txt: the files the build added or changed.
+- The code: emoji_picker/ (window.py, search.py, insert.py, usage.py, nav.py, fonts.py, ...), engine/ (the passive IBus engine and its component template), install.sh, uninstall.sh, tools/gsettings_lists.py, bin/emoji-picker, tests/.
+- review/DECLINED.md: four review findings the author declined, with the author's reasons.
+
+The goal (quoted from the plan): "Can Frank press a shortcut, type a few words or a sentence, see the emoji he means near the top of a big keyboard-navigable chart, press Enter, and have it appear in the app he was typing in, with nothing left behind?" Frank runs Ubuntu 26.04, GNOME 50 on Wayland, IBus 1.5.34, Python 3.14, US keyboard.
+
+Questions:
+1. Is there any defect in the built code that would stop the goal on Frank's setup, or damage his system settings (install.sh / uninstall.sh)? Give the concrete scenario. Rate each HIGH (it will not work for Frank, or it harms his settings), MEDIUM (works but noticeably worse), LOW (minor).
+2. Does the code do what the plan says in sections 6 (window, keys), 7 (insertion: preflight before hiding, never commit before 150 ms, generation must rise, 2 s limit, no clipboard after hiding) and 8 (install/uninstall)? Name any place where it does not.
+3. For each finding in review/DECLINED.md: does the author's reason hold? Answer HOLDS or DOES NOT HOLD, with why.
+4. Is any change applied in one place and missed in another?
+
+For each claim about how a library or GNOME behaves, say whether you know it or believe it.
+
+Do not hunt for problems to fill space. 'Nothing wrong' is a real and useful answer.
+
+Known quirks: the author ran the whole test suite in this copy: 33 tests pass (including a headless test that starts a private ibus-daemon). Your sandbox may not be able to start ibus-daemon or a display; a failure for that reason is not a finding. There is no display, so the window cannot be shown to you; read window.py instead. If you run Python, set XDG_CACHE_HOME=/tmp/cache and XDG_STATE_HOME=/tmp/state. You have no network access. Do not modify the files you are auditing.
+
+Print your report as your reply; write no report file. Keep any command under two minutes. Say each finding as soon as you have it, not only at the end. If something fails or time runs short, report what you have and what you could not check.

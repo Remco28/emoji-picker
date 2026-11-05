@@ -378,7 +378,7 @@ class PickerWindow(Adw.ApplicationWindow):
             else:
                 self._quit()
             return True
-        if ctrl and keyval in (Gdk.KEY_c, Gdk.KEY_C) and not self.entry.get_selection_bounds():
+        if ctrl and keyval in (Gdk.KEY_c, Gdk.KEY_C) and not has_selection(self.entry):
             self._copy_highlighted()
             return True
         if ctrl and keyval in (Gdk.KEY_plus, Gdk.KEY_equal, Gdk.KEY_KP_Add):
@@ -486,10 +486,14 @@ class PickerWindow(Adw.ApplicationWindow):
         if idx is None:
             return
         self._record(idx, tone)
-        self._copy(char)
+        self._copy(char, close_after_ms=1200)
 
-    def _copy(self, char, reason=None):
-        """Copy while the window still has focus, then confirm by reading it back."""
+    def _copy(self, char, reason=None, close_after_ms=None):
+        """Copy while the window still has focus, then confirm by reading it back.
+
+        With close_after_ms the window closes by itself once the copy is
+        confirmed (Ctrl+C); otherwise it stays until the next key, so a
+        fallback message can be read."""
         clipboard = self.get_display().get_clipboard()
         clipboard.set(char)
         self.mode = "copied"
@@ -507,8 +511,11 @@ class PickerWindow(Adw.ApplicationWindow):
             else:
                 msg = "Copying failed: the clipboard still holds something else."
             log(f"copy {char!r}: {'confirmed' if got == char else 'NOT confirmed'}")
-            self.status_name.set_label(msg)
+            self.status_name.set_label(msg if not close_after_ms or got != char
+                                       else f"Copied {char}: press Ctrl+V to paste.")
             self.status_hint.set_label("")
+            if close_after_ms and got == char:
+                GLib.timeout_add(close_after_ms, lambda: (self._quit(), False)[1])
 
         clipboard.read_text_async(None, check)
 
@@ -530,3 +537,16 @@ class PickerWindow(Adw.ApplicationWindow):
         self._on_close_request()
         app = self.get_application()
         GLib.timeout_add(300 if self.mode == "copied" else 0, lambda: (app.quit(), False)[1])
+
+
+def has_selection(entry):
+    """True when the search box has selected text (then Ctrl+C copies that).
+
+    PyGObject's GTK 4 override returns () or (start, end); a different
+    binding could return (flag, start, end). Handle both."""
+    bounds = entry.get_selection_bounds()
+    if not bounds:
+        return False
+    if isinstance(bounds[0], bool):
+        return bounds[0]
+    return bounds[0] != bounds[1]

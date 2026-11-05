@@ -59,6 +59,8 @@ def main(argv=None):
             k = k.strip()
             if k.startswith("type:"):
                 win.entry.set_text(k[5:])
+            elif k == "Ctrl+c":
+                win._on_key(None, Gdk.KEY_c, 0, Gdk.ModifierType.CONTROL_MASK)
             else:
                 win._on_key(None, names[k], 0, 0)
             if not win.get_visible() or app.get_windows() == []:

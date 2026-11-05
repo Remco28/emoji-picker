@@ -10,6 +10,8 @@ socket. The sequence, from plan v3 section 7:
    `Inserter` polls every 25 ms. It commits only when at least 150 ms have
    passed since hiding, the generation is above g0 (a real app took focus
    after the picker hid), and there has been no focus change for 30 ms.
+   When IBus names the focused client (1.5.27+), its internal "fake"
+   context never counts as an app; the engine also refuses commits there.
 3. If that does not happen within 2 s, nothing is committed (it would go
    into IBus's fake context and vanish); the user gets a notification.
 """
@@ -77,7 +79,8 @@ class Inserter:
     def ready(self, st, now):
         """The commit rule, separated so it can be tested on its own."""
         return (now - self.t0 >= MIN_DELAY_MS and st is not None and st.get("enabled")
-                and st.get("focused") and st.get("gen", 0) > self.g0
+                and st.get("focused") and st.get("client") != "fake"
+                and st.get("gen", 0) > self.g0
                 and st.get("since_ms", 0) >= QUIET_MS)
 
     def _tick(self):

@@ -116,3 +116,26 @@ Stories, as they now behave: "american flag happy" shows 🇺🇸 first and the 
 Prompt v1 used "american" and "vet" as examples, which are story words; prompt v2 removed every example that appears in the answer key (checked by script) and its results are the ones reported.
 
 Bugs the build's own tests caught: an empty `<layout_variant>` in the engine file makes IBus refuse to activate the engine ("Set global engine failed: Operation was cancelled") - the installer would have produced exactly that for Frank's plain "us" layout; the engine template comment contained the placeholders and got rewritten by the substitution; the search box grabbed focus with its text selected.
+
+## Fix auditor on the build, 2026-11-05, at 4d6454a
+
+Cast: Codex gpt-6-luna, workspace-write in a fenced copy (checksummed before and after: nothing changed; repo unchanged). Got PLAN v3, the code, the list of changed files, and the four declined findings (rows 9, 14, 17, 27). Report: fix-audit-codex.md.
+
+| # | Finding | Reader (their rating) | Ours | From | How checked | Done |
+|---|---|---|---|---|---|---|
+| 29 | Installer writes to a fixed shortcut path; a shortcut already there would be overwritten, and uninstall would reset it | Codex (HIGH, conditional) | MEDIUM: a setup not in use (GNOME names user shortcuts custom0, custom1...), fixed because it is cheap | new | Read install.sh / uninstall.sh | Install refuses before changing anything if the path holds a shortcut not named "Emoji Picker"; uninstall touches the path only if it is ours. Tested on a throwaway settings store |
+| 30 | Ctrl+C guard broken: `get_selection_bounds()` returns a truthy tuple | Codex (MEDIUM, "know") | **Declined: does not reproduce** | new | Reproduced under Xvfb: no selection returns `()`, falsy; Ctrl+C copied in the real window, read back and confirmed | Sent back once: Codex says HOLDS, caveat that a newer PyGObject might return (flag, start, end). Guard now handles both shapes (`has_selection`) |
+| 31 | Ctrl+C does not close the picker, unlike plan section 6 | Codex | LOW, tier 1 | new | Read window.py | Ctrl+C now closes 1.2 s after the copy is confirmed; tested in the window under Xvfb |
+| 32 | Installer does not run `ibus engine` when IBus already lists the engine (plan section 8 says it does) | Codex | Deviation kept, recorded | new | Read install.sh | Deliberate: GNOME owns input-source switching; calling `ibus engine` behind its back can leave the top-bar indicator wrong. The installer tells the user to pick it with Super+Space instead |
+| 27 (second opinion) | My decline "fake-context focus may raise the generation: not reproduced, logged" | Codex: DOES NOT HOLD ("lack of reproduction does not establish safety") | **Accepted; fixed** | | Found that IBus 1.5.27+ names the focused client to engines created with has-focus-id; tested with a private daemon: the internal context reports client "fake" | Engine now created with has-focus-id; status reports the client; the picker never counts "fake" as an app; the engine refuses commits into it. New test 3b covers it. Older IBus falls back to the generation rule |
+| 9, 14, 17 (second opinion) | font cutoff kept; no hand phrase table; FlowBox not GridView | Codex: HOLDS, HOLDS, HOLDS | declines stand | | | |
+
+Believed, and wrong: "the engine cannot tell IBus's fake context from a real app" (said in plan v1-v3, the probe and row 27). It can, with has-focus-id, on IBus 1.5.27+.
+
+## Mistakes the next author will make
+- Writing a Unix socket under the session scratchpad: its path is longer than the 108-byte limit and ibus-daemon silently never starts.
+- Putting an empty `<layout_variant>` in the engine component: IBus refuses to activate the engine with "Operation was cancelled". Leave the element out.
+- Naming template placeholders inside a comment of the same template: the substitution rewrites the comment.
+- Watching the held-out test half's totals while tuning: use `tools/eval.py --tune-only`.
+- Trusting a Pango rendering test for emoji support: Pango silently falls back to Unifont, so missing emoji "render". Check the emoji font's own charset.
+- Running `ibus restart` in an installer: it broke Frank's Super+. until he logged out.

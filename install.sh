@@ -45,6 +45,14 @@ done
 python3 -c 'import gi; gi.require_version("Gtk","4.0"); gi.require_version("Adw","1"); gi.require_version("IBus","1.0")' \
   || { echo "missing Python GTK 4 / libadwaita / IBus bindings" >&2; exit 1; }
 
+# Never overwrite a shortcut we did not create at our settings path.
+EXISTING=$(gsettings get "$KB_SCHEMA.custom-keybinding:$KB_PATH" name)
+if [ "$EXISTING" != "''" ] && [ "$EXISTING" != "'Emoji Picker'" ]; then
+  echo "A shortcut named $EXISTING already uses $KB_PATH; nothing was changed." >&2
+  echo "Rename or remove that shortcut first." >&2
+  exit 1
+fi
+
 step "1. Back up your current settings"
 if [ -f "$BACKUP/input-sources.txt" ]; then
   echo "   backup already exists (from the first install); keeping it"

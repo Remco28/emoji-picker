@@ -140,6 +140,21 @@ class InsertThroughIBusTest(unittest.TestCase):
         self.assertEqual(r.get("r"), "timeout", r)
         self.assertEqual(self.committed, [])
 
+    def test_3b_engine_names_the_fake_context_and_refuses_it(self):
+        from emoji_picker import insert
+        self.target.focus_in()
+        self.pump(0.1)
+        self.assertEqual(insert.status(self.engine_sock).get("client"), "target-app")
+        self.target.focus_out()          # nobody has focus: IBus's fake context
+        self.pump(0.2)
+        self.assertEqual(insert.status(self.engine_sock).get("client"), "fake")
+        self.committed.clear()
+        reply = insert.request({"op": "commit", "text": "😀"}, path=self.engine_sock)
+        self.assertEqual(reply, {"ok": False, "why": "fake-context"})
+        self.target.focus_in()
+        self.pump(0.2)
+        self.assertEqual(self.committed, [])
+
     def test_4_preflight_fails_when_engine_is_not_active(self):
         from emoji_picker import insert
         self.ibus_engine("xkb:us::eng")
