@@ -189,6 +189,14 @@ esac
         self.assertFalse(os.path.exists(self.root))
         self.assertEqual(self.get(SRC, "sources"), before)
 
+    def test_refuses_our_name_on_someone_elses_command(self):
+        self.set(KB_ONE, "name", "Emoji Picker")
+        self.set(KB_ONE, "command", "/usr/bin/gnome-characters")
+        r = self.install(ok=False)
+        self.assertEqual(r.returncode, 1)
+        self.assertEqual(self.get(KB_ONE, "command"), "'/usr/bin/gnome-characters'")
+        self.assertFalse(os.path.exists(self.root))
+
     def test_dry_run_changes_nothing(self):
         self.set(SRC, "sources", "[('xkb', 'us')]")
         keyfile = os.path.join(self.tmp, "config/glib-2.0/settings/keyfile")
@@ -243,7 +251,8 @@ esac
         self.assertEqual(self.get(SRC, "sources"), "[('ibus', 'emoji-picker')]")  # until login
         self.ibus_lists("emoji-picker:de+nodeadkeys")
         self.finish()
-        self.assertEqual(self.get(SRC, "sources"), "[('ibus', 'emoji-picker:de+nodeadkeys')]")
+        self.assertEqual(self.get(SRC, "sources"),
+                         "[('ibus', 'emoji-picker:de+nodeadkeys'), ('xkb', 'de+nodeadkeys')]")
         self.uninstall()
         self.assertEqual(self.get(SRC, "sources"), "[('xkb', 'de+nodeadkeys')]")
 

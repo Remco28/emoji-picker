@@ -33,6 +33,7 @@ from xml.sax.saxutils import escape
 
 PREFIX = "emoji-picker:"
 PROTOTYPE = ("ibus", "emoji-picker")  # the single engine of the 0.1 prototype
+FALLBACK_LAYOUT = "us"  # what GNOME types with when no input source is usable
 
 
 def engine_name(xkb_id):
@@ -101,12 +102,23 @@ def convert(sources, known=None, proto_id=None):
                 continue
             else:
                 item = (kind, name)   # keep the only engine that works until ours load
+        elif kind == "xkb" and ("ibus", engine_name(name)) in items:
+            item = (kind, name)       # already the backup of our engine (see below)
         elif kind == "xkb" and usable(engine_name(name)):
             item = ("ibus", engine_name(name))
         else:
             item = (kind, name)
         if item not in out:
             out.append(item)
+    # While IBus is not running (the first moments after login, or after a
+    # crash) GNOME skips IBus sources and, with nothing else left, types with
+    # 'us'. For a US layout that changes nothing. For any other, keep the
+    # plain layout at the end as a backup (owner's decision, 2026-11-05),
+    # which means GNOME shows its keyboard indicator for those users.
+    if not any(k == "xkb" for k, _n in out):
+        first = next((xkb_id_of(n) for k, n in out if k == "ibus" and xkb_id_of(n)), None)
+        if first and first != FALLBACK_LAYOUT:
+            out.append(("xkb", first))
     return out
 
 

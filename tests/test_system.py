@@ -18,7 +18,8 @@ class SourcesTest(unittest.TestCase):
     def test_order_and_other_engines_kept(self):
         src = [("xkb", "de+nodeadkeys"), ("ibus", "mozc-jp"), ("xkb", "us")]
         self.assertEqual(s.convert(src), [("ibus", "emoji-picker:de+nodeadkeys"),
-                                          ("ibus", "mozc-jp"), ("ibus", "emoji-picker:us")])
+                                          ("ibus", "mozc-jp"), ("ibus", "emoji-picker:us"),
+                                          ("xkb", "de+nodeadkeys")])  # backup: not US
 
     def test_prototype_upgrade(self):
         self.assertEqual(s.convert([("ibus", "emoji-picker"), ("xkb", "us")]),
@@ -38,9 +39,11 @@ class SourcesTest(unittest.TestCase):
         self.assertEqual(s.restore([]), [])                   # nothing of ours: unchanged
         self.assertEqual(s.restore([("ibus", "mozc-jp")]), [("ibus", "mozc-jp")])
 
-    def test_duplicates_collapse(self):
+    def test_a_plain_layout_beside_ours_is_kept(self):
+        # the user added the plain layout back themselves: leave it
         self.assertEqual(s.convert([("xkb", "us"), ("ibus", "emoji-picker:us")]),
-                         [("ibus", "emoji-picker:us")])
+                         [("xkb", "us"), ("ibus", "emoji-picker:us")])
+        self.assertEqual(s.convert([("xkb", "us"), ("xkb", "us")]), [("ibus", "emoji-picker:us")])
 
     def test_gsettings_text_round_trip(self):
         text = "[('xkb', 'us'), ('ibus', 'mozc-jp')]"
@@ -55,11 +58,24 @@ class SourcesTest(unittest.TestCase):
         # nothing known yet: the prototype engine stays, so typing still inserts
         self.assertEqual(s.convert(src, known=set()), src)
 
+    def test_non_us_layout_keeps_a_plain_backup(self):
+        once = s.convert([("xkb", "de")])
+        self.assertEqual(once, [("ibus", "emoji-picker:de"), ("xkb", "de")])
+        self.assertEqual(s.convert(once), once)                  # stable on re-install
+        self.assertEqual(s.restore(once), [("xkb", "de")])
+        self.assertEqual(s.convert([("xkb", "us+intl")]),         # US with dead keys is not 'us'
+                         [("ibus", "emoji-picker:us+intl"), ("xkb", "us+intl")])
+        self.assertEqual(s.convert([("xkb", "us"), ("xkb", "de")]),  # first is US: no backup
+                         [("ibus", "emoji-picker:us"), ("ibus", "emoji-picker:de")])
+        # a plain layout left unconverted already is a backup
+        self.assertEqual(s.convert([("xkb", "de"), ("xkb", "fr")], known={"emoji-picker:de"}),
+                         [("ibus", "emoji-picker:de"), ("xkb", "fr")])
+
     def test_prototype_engine_becomes_its_layout(self):
         self.assertEqual(s.convert([("ibus", "emoji-picker")], proto_id="de"),
-                         [("ibus", "emoji-picker:de")])
-        self.assertEqual(s.convert([("ibus", "emoji-picker"), ("xkb", "de")], proto_id="de"),
-                         [("ibus", "emoji-picker:de")])
+                         [("ibus", "emoji-picker:de"), ("xkb", "de")])
+        self.assertEqual(s.convert([("ibus", "emoji-picker"), ("xkb", "us")], proto_id="us"),
+                         [("ibus", "emoji-picker:us")])
         xml = "<engine><name>emoji-picker</name><layout>us</layout></engine>"
         self.assertEqual(s.prototype_layout(xml), "us")
         self.assertIsNone(s.prototype_layout("<engine><name>emoji-picker:us</name></engine>"))

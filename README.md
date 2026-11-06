@@ -45,7 +45,7 @@ To use another key than Super+.: `./install.sh --shortcut '<Control><Alt>e'`.
 |---|---|
 | The app in `/usr/local/lib/emoji-picker`, `/usr/local/bin/emoji-picker`, an app entry and icon | removed (once no user on the computer still uses it) |
 | `/usr/share/ibus/component/emoji-picker.xml`: one "with emoji" engine per keyboard layout | removed, or rewritten for the users still using it |
-| Your input sources: each keyboard layout becomes the same layout "with emoji" (other input methods are kept) | each goes back to the plain layout |
+| Your input sources: each keyboard layout becomes the same layout "with emoji" (other input methods are kept). A layout other than plain US also keeps the plain layout, last, as a backup (see Limits) | each goes back to the plain layout |
 | A custom shortcut "Emoji Picker" on Super+. | removed, unless you pointed it at something else |
 | IBus's own emoji picker lets go of Super+. (keeps Super+;) | Super+. given back |
 
@@ -92,9 +92,11 @@ then log out and back in once. Your emoji history and settings stay in
   emoji for you to paste instead of typing it.
 - **No plain keyboard layout.** If your input sources contain no keyboard
   layout at all, there is nothing to add emoji to, and the picker copies.
-- **Before IBus is up** (the first moments after login) **or if it stops**,
-  GNOME types with the US layout until IBus is back, because your layouts
-  are now IBus keyboards. With a US layout this changes nothing.
+- **The keyboard indicator** disappears only for a single US layout. GNOME
+  types with US whenever IBus is not running (the first moments after login,
+  or if it crashes), so any other layout keeps its plain version as a backup
+  input source, and GNOME then shows its indicator. US users lose nothing,
+  since US is GNOME's fallback anyway.
 - **English search only.**
 - **GNOME only**, tested on Ubuntu 26.04 (GNOME 50, Wayland).
 

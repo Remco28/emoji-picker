@@ -68,10 +68,13 @@ VERSION=$("$PY" -I -c 'import sys; sys.path.insert(0, sys.argv[1]); import emoji
 COMMIT=$(git -C "$HERE" rev-parse --short HEAD 2>/dev/null || cut -s -d' ' -f2 "$HERE/VERSION" 2>/dev/null || true)
 COMMIT=${COMMIT:-nogit}
 
-# Never take over a shortcut someone else put at our settings path.
+# Never take over a shortcut someone else put at our settings path: it must
+# be empty, or ours (our name, and a command that runs this picker).
 EXISTING=$(gsettings get "$KB_SCHEMA.custom-keybinding:$KB_PATH" name)
-if [ "$EXISTING" != "''" ] && [ "$EXISTING" != "'Emoji Picker'" ]; then
-  echo "A shortcut named $EXISTING already uses $KB_PATH; nothing was changed." >&2
+EXISTING_CMD=$(gsettings get "$KB_SCHEMA.custom-keybinding:$KB_PATH" command)
+if { [ "$EXISTING" != "''" ] && [ "$EXISTING" != "'Emoji Picker'" ]; } \
+   || { [ "$EXISTING_CMD" != "''" ] && [[ "$EXISTING_CMD" != */bin/emoji-picker\' ]]; }; then
+  echo "A shortcut named $EXISTING ($EXISTING_CMD) already uses $KB_PATH; nothing was changed." >&2
   echo "Rename or remove that shortcut first." >&2
   exit 1
 fi

@@ -61,3 +61,25 @@ a disk write on nearly every keystroke (fixed); picker.log never rotated (fixed)
 
 Believed, and wrong: "the conflict check covers custom shortcuts" (prototype install.sh:92) —
 `gsettings list-recursively` skips relocatable schemas.
+
+## Fix audit, 2026-11-05, diff 9b9275e..bd3907f
+Cast: fix auditor = Codex gpt-6-luna (diff, plan, declines; ran the tests: 63 OK, 1 skipped in its sandbox).
+
+| # | Finding | Reader (their rating) | Ours | From | How checked | Done |
+|---|---|---|---|---|---|---|
+| 28 | Install overwrites a shortcut at our path named "Emoji Picker" whose command is someone else's | auditor (HIGH, reproduced) | tier 1, HIGH, a setup not in use | old (prototype guard checked the name only) | reproduced in test | fixed: name and command must be ours; test |
+| 29 | Non-US layouts fall back to US while IBus is down (= decline 5) | auditor (HIGH, DOES NOT HOLD) | taken to the owner | new | read GNOME source | Frank chose: non-US layouts keep the plain layout as a backup (indicator shows for them); US unchanged |
+| — | Round 3 guide missing | auditor | it was being written in parallel | n/a | n/a | human_feedback/round-2026-11-05-production/ |
+
+Second opinions on declines: 1 HOLDS, 2 HOLDS, 3 HOLDS, 4 HOLDS, 5 DOES NOT HOLD (→ #29).
+Not re-audited: the backup-layout change (#29) and the guard (#28) came after the audit; both are
+small and covered by tests (72 OK). Said so to the owner.
+
+Believed, and wrong: "documenting the US fallback is enough" (decline 5) — the auditor held the
+goal I wrote myself ("never lose a working keyboard") against it, and the owner agreed.
+
+## Mistakes the next author will make
+- Trusting `gsettings list-recursively` to show every shortcut: it skips custom ones.
+- Treating an `xkb` source next to our engine as "to convert": it may be the deliberate backup.
+- Testing only with a US layout: GNOME's fallback hides every layout bug for US users.
+- Changing the engine name format (`emoji-picker:<xkb id>`): sources in users' settings point at it.
