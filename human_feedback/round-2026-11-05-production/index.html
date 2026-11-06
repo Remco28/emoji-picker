@@ -123,7 +123,7 @@ const CONFIG = {
   roundId: "round-2026-11-05-production",
   title: "Version 1.0: Super+., no extra keyboard, a real install",
   testUrl: "",
-  testedCommit: "@COMMIT@",
+  testedCommit: "3d01262",
   intro: "This round replaces the prototype with the version meant to last: it installs into /usr/local (you can delete the clone afterwards), takes over Super+., and swaps your 'English (US)' keyboard for 'English (US, with emoji)' so there is only one keyboard and no icon in the top bar. It upgrades your prototype install in place. In a terminal: cd into the repo and git pull, then follow the steps in order. Nothing here uploads anything. 'emoji-picker --doctor' prints what is installed; paste it whenever something looks wrong.",
   scenarios: [
     { id: "0-tests", title: "0. Quick self-check (optional, 1 minute)", why: "Checks the installer logic and the engine on your Python 3.14 and IBus 1.5.34 before anything changes. It uses a throwaway settings file and its own private IBus; your desktop is untouched.", try: "Run: python3 -m unittest discover -s tests -t .  Paste the last few lines (it should say OK)." },
