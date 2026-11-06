@@ -126,7 +126,7 @@ Measured against a frozen answer key (`tests/eval_queries.json`), including
 | | plain keywords | with build-time terms |
 |---|---|---|
 | held-out test half | 19/30 | 27/30 |
-| held-out tuning half | 21/30 | 28/30 |
+| held-out tuning half | 20/30 | 28/30 |
 | blind judge (Gemini, 30 queries, both orders) | preferred 4 times | preferred 14 times (12 ties) |
 
 Known gaps: "vet" does not lead to 🏥; after "american flag happy" the

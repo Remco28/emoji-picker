@@ -1,4 +1,5 @@
-"""The picker window: a search box over a keyboard-navigable chart of emoji."""
+"""The picker window: a search box over a keyboard-navigable chart of emoji,
+with a card on the right that previews the highlighted emoji."""
 import json
 import os
 import time
@@ -11,12 +12,22 @@ gi.require_version("Adw", "1")
 from gi.repository import Adw, Gdk, GLib, Gtk  # noqa: E402
 
 from . import design, insert  # noqa: E402
-from .layout import SIDE_PADDING, columns  # noqa: E402
+from .layout import columns  # noqa: E402
 from .nav import Grid, Pointer  # noqa: E402
 from .search import Section  # noqa: E402
 
 TONE_NAMES = {1: "light", 2: "medium-light", 3: "medium", 4: "medium-dark", 5: "dark"}
-HINT = "Enter insert · Tab skin tones · Ctrl+C copy · Esc close"
+PLACEHOLDER = "Search, or try ‘food’"
+
+# The key hints in the bottom bar, per state: (key, what it does)
+HINTS = {
+    "browse": [("Enter", "insert"), ("Ctrl+C", "copy"), ("Ctrl+↑↓", "jump"), ("Esc", "close")],
+    "search": [("Enter", "insert"), ("Ctrl+C", "copy"), ("Ctrl+↑↓", "jump"), ("Esc", "clear")],
+    "empty": [("Esc", "clear")],
+    "tones": [("Enter", "insert"), ("Tab or Esc", "back")],
+    "copied": [("Any key", "closes")],
+    "closing": [],
+}
 
 
 def state_dir():
@@ -40,10 +51,36 @@ def log(msg):
         pass
 
 
+def hints_markup(state):
+    parts = [f'<span weight="600">{GLib.markup_escape_text(k)}</span> '
+             f'<span fgalpha="70%">{GLib.markup_escape_text(a)}</span>' for k, a in HINTS[state]]
+    return '<span fgalpha="40%">   ·   </span>'.join(parts) or " "
+
+
+def card_text(e):
+    """(name, detail line) for the card: names start with a capital, and
+    flags put the country first ("Azerbaijan", "Flag · :azerbaijan:")."""
+    name, kind = e["n"], ""
+    if name.startswith("flag: "):
+        name, kind = name[len("flag: "):], "Flag"
+    name = name[:1].upper() + name[1:]
+    code = f":{e['sc'][0]}:" if e.get("sc") else ""
+    return name, " · ".join(x for x in (kind, code) if x)
+
+
+def tone_text(tone):
+    if tone is None:
+        return "No skin tone"
+    if isinstance(tone, list):
+        a, b = (TONE_NAMES.get(t, "") for t in tone)
+        return f"{a.capitalize()} skin tone" if a == b else f"{a.capitalize()} and {b} skin tones"
+    return f"{TONE_NAMES.get(tone, '').capitalize()} skin tone"
+
+
 class Settings:
     def __init__(self):
         self.path = os.path.join(state_dir(), "settings.json")
-        self.width, self.height = 760, 560
+        self.width, self.height = design.DEFAULT_WIDTH, design.DEFAULT_HEIGHT
         self.emoji_size = design.EMOJI_DEFAULT
         try:
             with open(self.path, encoding="utf-8") as f:
@@ -66,18 +103,41 @@ class Settings:
             pass
 
 
-class Chart(Gtk.Box):
-    """Vertical box of sections that reports its width, to recompute columns."""
+class Chart(Gtk.Widget):
+    """The sections, in a column exactly as wide as the whole cells that fit,
+    so cells are never stretched. Reports its width so the window can
+    recompute the column count. (The window also hands leftover width to the
+    card, so normally the chart is already a whole number of cells wide.)"""
     __gtype_name__ = "EmojiPickerChart"
 
-    def __init__(self, on_width):
-        super().__init__(orientation=Gtk.Orientation.VERTICAL)
+    def __init__(self, on_width, cell):
+        super().__init__()
         self.on_width = on_width
+        self.cell = cell
+        self.inner = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        self.inner.set_parent(self)
         self.add_css_class("ep-chart")
 
-    def do_size_allocate(self, width, height, baseline):
-        Gtk.Box.do_size_allocate(self, width, height, baseline)
+    def inner_width(self, width):
+        return max(self.cell, min(width, columns(width, self.cell) * self.cell))
+
+    def do_measure(self, orientation, for_size):
+        if orientation == Gtk.Orientation.HORIZONTAL:
+            _m, nat, _b, _b2 = self.inner.measure(orientation, -1)
+            return 0, nat, -1, -1
+        width = self.inner_width(for_size) if for_size >= 0 else -1
+        m, nat, _b, _b2 = self.inner.measure(orientation, width)
+        return m, nat, -1, -1
+
+    def do_size_allocate(self, width, height, _baseline):
+        self.inner.allocate(self.inner_width(width), height, -1, None)
         self.on_width(width)
+
+    def do_dispose(self):
+        if self.inner is not None:
+            self.inner.unparent()
+            self.inner = None
+        Gtk.Widget.do_dispose(self)
 
 
 class PickerWindow(Adw.ApplicationWindow):
@@ -92,10 +152,12 @@ class PickerWindow(Adw.ApplicationWindow):
         self.mode = "pick"      # pick | tones | copied | inserting
         self.cells = []         # flat display order: (FlowBoxChild, emoji index, char)
         self.flowboxes = []
+        self.section_labels = []
         self.highlight = None
-        self.columns = columns(self.settings.width + SIDE_PADDING,
-                               design.cell_width(self.settings.emoji_size))
+        cell = design.cell_width(self.settings.emoji_size)
+        self.columns = columns(design.chart_width(self.settings.width), cell)
         self.grid = Grid([], self.columns)
+        self._sections = []
         self.saved_query_state = None
         self.tone_base = None
 
@@ -106,36 +168,60 @@ class PickerWindow(Adw.ApplicationWindow):
 
         # search box: a plain Entry so it can use GTK's simple input method,
         # which keeps IBus (and so our engine) from ever seeing the picker
-        self.entry = Gtk.Entry(placeholder_text="Search emoji, or type a sentence",
-                               hexpand=True)
+        self.entry = Gtk.Entry(placeholder_text=PLACEHOLDER, hexpand=True)
+        self.entry.set_icon_from_icon_name(Gtk.EntryIconPosition.PRIMARY, "system-search-symbolic")
         self.entry.set_property("im-module", "gtk-im-context-simple")
-        self.entry.add_css_class("ep-search")
         self.entry.connect("changed", self._on_changed)
 
-        header = Adw.HeaderBar()
-        header.set_title_widget(self.entry)
+        # the top bar: the search box across the width, lined up with the
+        # chart, and a close button only (the picker closes when it loses
+        # focus, so minimise would close it too)
+        bar = Gtk.Box(spacing=design.S3)
+        for m in ("top", "bottom"):
+            getattr(bar, f"set_margin_{m}")(design.S2)
+        bar.set_margin_start(design.S3)
+        bar.set_margin_end(design.S3)
+        bar.append(self.entry)
+        bar.append(Gtk.WindowControls(side=Gtk.PackType.END, decoration_layout=":close"))
+        header = Gtk.WindowHandle(child=bar)
 
-        self.chart = Chart(self._on_chart_width)
-        self.scroller = Gtk.ScrolledWindow(vexpand=True, hscrollbar_policy=Gtk.PolicyType.NEVER)
+        # the chart, with the current section's title pinned over its top
+        # and a fade where it continues below the bottom edge
+        self.chart = Chart(self._on_chart_width, cell)
+        self.chart.set_margin_start(design.S3)
+        self.chart.set_margin_end(design.S3)
+        self.chart.set_margin_bottom(design.S6)
+        self.scroller = Gtk.ScrolledWindow(vexpand=True, hexpand=True,
+                                           hscrollbar_policy=Gtk.PolicyType.NEVER)
         self.scroller.set_child(self.chart)
-        self.chart.set_margin_start(SIDE_PADDING // 2)
-        self.chart.set_margin_end(SIDE_PADDING // 2)
-        self.chart.set_margin_bottom(design.S3)
+        self.scroller.get_vadjustment().connect("value-changed", self._update_pinned)
+        self.pinned_label = Gtk.Label(xalign=0, ellipsize=3, hexpand=True,  # END
+                                      margin_start=design.S3, margin_end=design.S3)
+        self.pinned_label.add_css_class("heading")
+        self.pinned_label.add_css_class("ep-section")
+        self.pinned = Gtk.Box(valign=Gtk.Align.START, can_target=False, visible=False)
+        self.pinned.add_css_class("ep-pinned")
+        self.pinned.append(self.pinned_label)
+        fade = Gtk.Box(valign=Gtk.Align.END, height_request=design.FADE, can_target=False)
+        fade.add_css_class("ep-fade")
+        chart_area = Gtk.Overlay(hexpand=True)
+        chart_area.set_child(self.scroller)
+        chart_area.add_overlay(self.pinned)
+        chart_area.add_overlay(fade)
 
-        self.status_name = Gtk.Label(xalign=0, hexpand=True, ellipsize=3)  # END
-        self.status_hint = Gtk.Label(label=HINT, xalign=1)
-        self.status_hint.add_css_class("ep-hint")
-        status = Gtk.Box(spacing=design.S3)
-        status.add_css_class("ep-status")
-        status.append(self.status_name)
-        status.append(self.status_hint)
+        body = Gtk.Box()
+        body.append(chart_area)
+        self.card = self._build_card()
+        body.append(self.card)
 
-        body = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        body.append(self.scroller)
-        body.append(status)
+        self.hints = Gtk.Label(xalign=0, use_markup=True, ellipsize=3)
+        self.hints.add_css_class("caption")
+        self.hints.add_css_class("ep-hints")
+
         view = Adw.ToolbarView()
         view.add_top_bar(header)
         view.set_content(body)
+        view.add_bottom_bar(self.hints)
         self.set_content(view)
 
         # window-level pointer tracking runs before the cells' hover handlers
@@ -160,28 +246,90 @@ class PickerWindow(Adw.ApplicationWindow):
         self.entry.grab_focus_without_selecting()
         self.entry.set_position(-1)
 
+    # ---- the card ------------------------------------------------------------
+
+    def _build_card(self):
+        def label(*classes, **kw):
+            lab = Gtk.Label(justify=Gtk.Justification.CENTER, max_width_chars=1, **kw)
+            for c in classes:
+                lab.add_css_class(c)
+            return lab
+
+        self.card_emoji = label("ep-card-emoji", height_request=design.CARD_EMOJI_BOX)
+        self.card_name = label("title-4", wrap=True, wrap_mode=2, lines=3, ellipsize=3)  # WORD_CHAR, END
+        self.card_detail = label("monospace", "ep-muted", ellipsize=2)  # MIDDLE
+        self.card_note = label("caption", "ep-muted", wrap=True)
+        self.card_result = label("heading")
+        self.card_result_detail = label("ep-muted", wrap=True)
+        card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=design.S1,
+                       width_request=design.CARD_WIDTH, valign=Gtk.Align.START)
+        card.add_css_class("card")
+        for m in ("top", "end", "bottom"):
+            getattr(card, f"set_margin_{m}")(design.S3)
+        card.set_margin_start(design.S3)
+        inner = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=design.S1)
+        for m in ("top", "start", "end", "bottom"):
+            getattr(inner, f"set_margin_{m}")(design.S3)
+        self.card_name.set_margin_top(design.S2)
+        self.card_note.set_margin_top(design.S2)
+        self.card_result.set_margin_top(design.S2)
+        for w in (self.card_emoji, self.card_name, self.card_detail, self.card_note,
+                  self.card_result, self.card_result_detail):
+            inner.append(w)
+        card.append(inner)
+        return card
+
+    def _show_card(self, idx=None, char="", note=""):
+        if idx is None:
+            name, detail = "", ""
+        else:
+            name, detail = card_text(self.index.emoji[idx])
+        # with nothing highlighted the card keeps its place but is not drawn
+        self.card.set_opacity(0 if idx is None else 1)
+        self.card_emoji.set_label(char)
+        self.card_name.set_label(name)
+        self.card_detail.set_label(detail)
+        self.card_detail.set_visible(bool(detail))
+        self.card_note.set_markup(note)
+        self.card_note.set_visible(bool(note))
+        for w in (self.card_result, self.card_result_detail):
+            w.set_visible(False)
+
+    def _card_result(self, title, detail, role):
+        self.card_note.set_visible(False)
+        self.card_result.set_label(title)
+        for r in ("success", "error"):
+            self.card_result.remove_css_class(r)
+        self.card_result.add_css_class(role)
+        self.card_result_detail.set_label(detail)
+        self.card_result.set_visible(True)
+        self.card_result_detail.set_visible(True)
+
     # ---- building the chart ----------------------------------------------
 
     def _apply_css(self):
         self.css.load_from_string(design.css(self.settings.emoji_size))
 
     def _clear(self):
-        child = self.chart.get_first_child()
+        inner = self.chart.inner
+        child = inner.get_first_child()
         while child is not None:
             nxt = child.get_next_sibling()
-            self.chart.remove(child)
+            inner.remove(child)
             child = nxt
-        self.cells, self.flowboxes = [], []
+        self.cells, self.flowboxes, self.section_labels = [], [], []
 
     def _add_section(self, title, chars_and_ids):
         if not chars_and_ids:
             return
-        label = Gtk.Label(label=title, xalign=0)
+        label = Gtk.Label(label=title, xalign=0, ellipsize=3)  # END
+        label.add_css_class("heading")
         label.add_css_class("ep-section")
-        self.chart.append(label)
+        self.chart.inner.append(label)
+        self.section_labels.append(label)
         fb = Gtk.FlowBox(selection_mode=Gtk.SelectionMode.NONE, homogeneous=True,
                          activate_on_single_click=True, column_spacing=0, row_spacing=0,
-                         min_children_per_line=self.columns, max_children_per_line=self.columns)
+                         min_children_per_line=1, max_children_per_line=self.columns)
         fb.connect("child-activated", self._on_activated)
         motion = Gtk.EventControllerMotion()
         motion.connect("motion", self._on_motion, fb)
@@ -198,8 +346,14 @@ class PickerWindow(Adw.ApplicationWindow):
             # screen readers say the name, not the glyph's codepoints
             child.update_property([Gtk.AccessibleProperty.LABEL], [self.index.emoji[idx]["n"]])
             self.cells.append((child, idx, char))
-        self.chart.append(fb)
+        self.chart.inner.append(fb)
         self.flowboxes.append(fb)
+
+    @staticmethod
+    def _title(s):
+        # a line per search word is named by that word, in quotes, so it does
+        # not read as a category
+        return f"“{s.title}”" if s.kind == "concept" else s.title
 
     def _display_char(self, i):
         e = self.index.emoji[i]
@@ -219,6 +373,7 @@ class PickerWindow(Adw.ApplicationWindow):
         self._sections = sections
         self.grid = Grid([len(s.items) for s in sections], self.columns)
         self._set_highlight(0 if self.cells else None)
+        GLib.idle_add(self._update_pinned)
 
     FIRST_CELLS = 360  # browse cells built before the first frame; the rest in idle time
 
@@ -226,19 +381,32 @@ class PickerWindow(Adw.ApplicationWindow):
         t = time.perf_counter()
         self._build_token = getattr(self, "_build_token", 0) + 1
         self._clear()
+        self.scroller.get_vadjustment().set_value(0)
         secs = self.index.sections(query, self.columns) if query.strip() else None
         if secs is None:
             secs = self._browse_sections()
             self._build_staged(secs, self._build_token)
+            self._set_hints("browse")
             return
         if not secs:
-            empty = Gtk.Label(label="No emoji match that. Try another word.")
-            empty.add_css_class("ep-empty")
-            self.chart.append(empty)
+            self._add_empty()
         for s in secs:
-            self._add_section(s.title, [(self._display_char(i), i) for i in s.items])
+            self._add_section(self._title(s), [(self._display_char(i), i) for i in s.items])
         self._finish_build(secs)
+        self._set_hints("search" if secs else "empty")
         self.last_build_ms = (time.perf_counter() - t) * 1000
+
+    def _add_empty(self):
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=design.S2,
+                      margin_top=design.S6 * 3)
+        title = Gtk.Label(label="No emoji found", wrap=True, max_width_chars=1)
+        title.add_css_class("title-4")
+        desc = Gtk.Label(label="Try another word, or a category like ‘food’.", wrap=True,
+                         justify=Gtk.Justification.CENTER, max_width_chars=1)
+        desc.add_css_class("ep-muted")
+        box.append(title)
+        box.append(desc)
+        self.chart.inner.append(box)
 
     def _build_staged(self, secs, token):
         """Add the browse sections: enough for the first screens now, the rest
@@ -247,7 +415,7 @@ class PickerWindow(Adw.ApplicationWindow):
         queue = list(secs)
         while queue and built < self.FIRST_CELLS:
             s = queue.pop(0)
-            self._add_section(s.title, [(self._display_char(i), i) for i in s.items])
+            self._add_section(self._title(s), [(self._display_char(i), i) for i in s.items])
             done.append(s)
             built += len(s.items)
         self._finish_build(done)
@@ -256,7 +424,7 @@ class PickerWindow(Adw.ApplicationWindow):
             if token != self._build_token or not queue or self.mode != "pick":
                 return False
             s = queue.pop(0)
-            self._add_section(s.title, [(self._display_char(i), i) for i in s.items])
+            self._add_section(self._title(s), [(self._display_char(i), i) for i in s.items])
             done.append(s)
             keep = self.highlight
             self.grid = Grid([len(x.items) for x in done], self.columns)
@@ -269,8 +437,11 @@ class PickerWindow(Adw.ApplicationWindow):
 
     def _browse_sections(self):
         out = []
-        recent = [self.by_hex[h] for h in self.usage.recent() if h in self.by_hex]
-        frequent = [self.by_hex[h] for h in self.usage.frequent() if h in self.by_hex]
+        # Recent is one line; Frequent leaves out what Recent already shows
+        recent = [self.by_hex[h] for h in self.usage.recent() if h in self.by_hex][:self.columns]
+        shown = set(recent)
+        frequent = [self.by_hex[h] for h in self.usage.frequent()
+                    if h in self.by_hex and self.by_hex[h] not in shown]
         if recent:
             out.append(Section("Recent", recent, kind="recent"))
         if frequent:
@@ -279,45 +450,101 @@ class PickerWindow(Adw.ApplicationWindow):
         for i, e in enumerate(self.index.emoji):
             groups.setdefault(e["g"], []).append(i)
         for g in sorted(groups):
-            name = self.index.groups.get(str(g), "").replace("-", " & ").replace("smileys & emotion", "smileys & emotion")
+            name = self.index.groups.get(str(g), "").replace("-", " & ")
             out.append(Section(name.capitalize(), groups[g], kind="browse"))
         return out
 
     def _on_chart_width(self, width):
-        cols = columns(width + SIDE_PADDING, design.cell_width(self.settings.emoji_size))
+        cols = columns(width, design.cell_width(self.settings.emoji_size))
         if cols != self.columns:
             self.columns = cols
             GLib.idle_add(self._relayout)
+        # the card takes the width left over after whole cells, so the
+        # chart's right edge and the card's left edge keep one gap
+        avail = design.chart_width(self.get_width())
+        cell = design.cell_width(self.settings.emoji_size)
+        card = design.CARD_WIDTH + max(0, avail - columns(avail, cell) * cell)
+        if card != self.card.get_size_request()[0]:
+            GLib.idle_add(self.card.set_size_request, card, -1)
 
     def _relayout(self):
         for fb in self.flowboxes:
-            fb.set_min_children_per_line(self.columns)
             fb.set_max_children_per_line(self.columns)
-        if hasattr(self, "_sections"):
-            keep = self.highlight
-            self.grid = Grid([len(s.items) for s in self._sections], self.columns)
-            self._set_highlight(keep)
+        keep = self.highlight
+        self.grid = Grid([len(s.items) for s in self._sections], self.columns)
+        self._set_highlight(keep)
         return False
+
+    # ---- the pinned title ------------------------------------------------
+
+    def _label_y(self, label):
+        ok, rect = label.compute_bounds(self.chart)
+        return rect.origin.y if ok else None
+
+    def _update_pinned(self, *_a):
+        value = self.scroller.get_vadjustment().get_value()
+        title = None
+        for label in self.section_labels:
+            y = self._label_y(label)
+            if y is None or (title is not None and y > value + 1):
+                break
+            title = label.get_label()
+        self.pinned_label.set_label(title or "")
+        self.pinned.set_visible(bool(title))
+        if value > 0:
+            self.pinned.add_css_class("ep-scrolled")
+        else:
+            self.pinned.remove_css_class("ep-scrolled")
+        return False
+
+    def _section_starts(self):
+        starts, n = [], 0
+        for s in self._sections:
+            starts.append(n)
+            n += len(s.items)
+        return starts
+
+    def _jump(self, step):
+        """Ctrl+Up/Down: to the start of the previous or next section, its
+        title under the pinned one. Up from inside a section goes to its start."""
+        starts = self._section_starts()
+        if not starts or self.highlight is None:
+            return
+        cur = max(i for i, s in enumerate(starts) if s <= self.highlight)
+        if step < 0 and self.highlight > starts[cur]:
+            target = cur
+        else:
+            target = max(0, min(len(starts) - 1, cur + step))
+        self._set_highlight(starts[target], scroll=False)
+        y = self._label_y(self.section_labels[target]) if target < len(self.section_labels) else None
+        if y is not None:
+            self.scroller.get_vadjustment().set_value(y)
 
     # ---- highlight and status -------------------------------------------
 
-    def _set_highlight(self, k):
+    def _set_highlight(self, k, scroll=True):
         if self.highlight is not None and self.highlight < len(self.cells):
             self.cells[self.highlight][0].remove_css_class("ep-highlight")
         self.highlight = k
         if k is None or not self.cells:
-            self.status_name.set_label("")
+            self._show_card()
             return
         child, idx, char = self.cells[k]
         child.add_css_class("ep-highlight")
-        self._update_status(idx, char)
-        GLib.idle_add(self._scroll_to, child, k)
+        self._update_card(idx, char)
+        if scroll:
+            GLib.idle_add(self._scroll_to, child, k)
 
-    def _update_status(self, idx, char):
+    def _update_card(self, idx, char):
         e = self.index.emoji[idx]
-        code = f"  :{e['sc'][0]}:" if e.get("sc") else ""
-        tones = "  · Tab for skin tones" if e.get("sk") and self.mode == "pick" else ""
-        self.status_name.set_label(f"{char}  {e['n']}{code}{tones}")
+        if self.mode == "tones":
+            note = GLib.markup_escape_text(tone_text(self._tone_values[self.highlight]))
+        else:
+            note = '<span weight="600">Tab</span> skin tones' if e.get("sk") else ""
+        self._show_card(idx, char, note)
+
+    def _set_hints(self, state):
+        self.hints.set_markup(hints_markup(state))
 
     def _scroll_to(self, child, k):
         adj = self.scroller.get_vadjustment()
@@ -327,10 +554,10 @@ class PickerWindow(Adw.ApplicationWindow):
         top, bottom = rect.origin.y, rect.origin.y + rect.size.height
         if k == 0:
             adj.set_value(0)
-        elif top < adj.get_value():
-            adj.set_value(max(0, top - design.S6))
-        elif bottom > adj.get_value() + adj.get_page_size():
-            adj.set_value(bottom - adj.get_page_size() + design.S3)
+        elif top < adj.get_value() + design.PINNED_HEIGHT:
+            adj.set_value(max(0, top - design.PINNED_HEIGHT))
+        elif bottom > adj.get_value() + adj.get_page_size() - design.FADE:
+            adj.set_value(bottom - adj.get_page_size() + design.FADE)
         return False
 
     # ---- input -------------------------------------------------------------
@@ -372,6 +599,9 @@ class PickerWindow(Adw.ApplicationWindow):
             self._quit()
             return True
         if self.mode == "inserting":
+            return True
+        if ctrl and keyval in (Gdk.KEY_Up, Gdk.KEY_Down) and self.mode == "pick":
+            self._jump(-1 if keyval == Gdk.KEY_Up else 1)
             return True
         moves = {Gdk.KEY_Left: "left", Gdk.KEY_Right: "right", Gdk.KEY_Up: "up",
                  Gdk.KEY_Down: "down", Gdk.KEY_Page_Up: "page_up", Gdk.KEY_Page_Down: "page_down"}
@@ -418,7 +648,9 @@ class PickerWindow(Adw.ApplicationWindow):
         cur = sizes.index(self.settings.emoji_size)
         new = sizes.index(design.EMOJI_DEFAULT) if step == 0 else max(0, min(len(sizes) - 1, cur + step))
         self.settings.emoji_size = sizes[new]
+        self.chart.cell = design.cell_width(self.settings.emoji_size)
         self._apply_css()
+        self.chart.queue_resize()
         self._on_chart_width(self.chart.get_width())
 
     # ---- skin tones -------------------------------------------------------
@@ -429,24 +661,29 @@ class PickerWindow(Adw.ApplicationWindow):
         idx = self.cells[self.highlight][1]
         e = self.index.emoji[idx]
         if not e.get("sk"):
-            self.status_name.set_label(f"{e['e']}  {e['n']} has no skin tones")
+            self.card_note.set_label("No skin tones")
+            self.card_note.set_visible(True)
             return
         self.saved_query_state = (self.highlight,)
         self.tone_base = idx
         self.mode = "tones"
+        self.entry.set_editable(False)
         self._clear()
         items = [(e["e"], idx)] + [(s[0], idx) for s in e["sk"]]
         self._tone_values = [None] + [s[1] for s in e["sk"]]
-        self._add_section(f"Skin tones for {e['n']}  (Enter to insert, Tab or Esc to go back)", items)
+        self._add_section("Skin tones", items)
         self._sections = [Section("tones", [i for _c, i in items])]
         self.grid = Grid([len(items)], self.columns)
         current = self.usage.tone_for(e["h"], {"pair" if isinstance(s[1], list) else "single"
                                                 for s in e["sk"]})
         start = self._tone_values.index(current) if current in self._tone_values else 0
         self._set_highlight(start)
+        self._set_hints("tones")
+        GLib.idle_add(self._update_pinned)
 
     def _close_tones(self):
         self.mode = "pick"
+        self.entry.set_editable(True)
         keep = self.saved_query_state[0] if self.saved_query_state else 0
         self._show_results(self.entry.get_text())
         if self.cells:
@@ -515,9 +752,9 @@ class PickerWindow(Adw.ApplicationWindow):
     def _copy(self, char, reason=None, close_after_ms=None):
         """Copy while the window still has focus, then confirm by reading it back.
 
-        With close_after_ms the window closes by itself once the copy is
-        confirmed (Ctrl+C); otherwise it stays until the next key, so a
-        fallback message can be read."""
+        The card says what happened. With close_after_ms the window closes by
+        itself once the copy is confirmed (Ctrl+C); otherwise it stays until
+        the next key, so a fallback message can be read."""
         clipboard = self.get_display().get_clipboard()
         clipboard.set(char)
         self.mode = "copied"
@@ -527,20 +764,19 @@ class PickerWindow(Adw.ApplicationWindow):
                 got = cb.read_text_finish(res)
             except GLib.Error:
                 got = None
-            if got == char:
-                msg = f"Copied {char}: press Ctrl+V to paste (Ctrl+Shift+V in a terminal)."
-                if reason:
-                    msg = f"Could not insert directly ({reason}). " + msg
-                msg += "  Any key closes."
+            ok = got == char
+            log(f"copy {char!r}: {'confirmed' if ok else 'NOT confirmed'}")
+            paste = "Press Ctrl+V to paste (Ctrl+Shift+V in a terminal)."
+            if not ok:
+                self._card_result("Not copied", "The clipboard still holds something else.", "error")
+            elif reason:
+                self._card_result("Copied instead",
+                                  f"Could not insert directly: {reason}.\n\n{paste}", "success")
             else:
-                msg = "Copying failed: the clipboard still holds something else."
-            log(f"copy {char!r}: {'confirmed' if got == char else 'NOT confirmed'}")
-            self.status_name.set_label(msg if not close_after_ms or got != char
-                                       else f"Copied {char}: press Ctrl+V to paste.")
-            self.status_hint.set_label("")
-            self.status_name.set_ellipsize(0)   # NONE: a fallback message must be read in full
-            self.status_name.set_wrap(True)
-            if close_after_ms and got == char:
+                self._card_result("Copied", paste, "success")
+            closing = close_after_ms and ok
+            self._set_hints("closing" if closing else "copied")
+            if closing:
                 GLib.timeout_add(close_after_ms, lambda: (self._quit(), False)[1])
 
         clipboard.read_text_async(None, check)
