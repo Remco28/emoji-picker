@@ -278,7 +278,9 @@ class PickerWindow(Adw.ApplicationWindow):
         for m in ("top", "end", "bottom"):
             getattr(card, f"set_margin_{m}")(design.S3)
         card.set_margin_start(design.S3)
-        inner = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=design.S1)
+        # centred in the card's height (Frank, 2026-11-06)
+        inner = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=design.S1,
+                        valign=Gtk.Align.CENTER)
         for m in ("top", "start", "end", "bottom"):
             getattr(inner, f"set_margin_{m}")(design.S3)
         self.card_name.set_margin_top(design.S2)

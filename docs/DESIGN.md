@@ -13,7 +13,7 @@ Taste choices, recorded so nobody asks again. Values live in
 - **Keyboards are replaced, not added** (Frank, 2026-11-05): each layout becomes the same layout "with emoji", so a single US layout shows no keyboard indicator. A non-US layout also keeps its plain version as a backup, because GNOME types US whenever IBus is down (Frank chose safety over hiding the indicator for those users).
 - **Super+. belongs to the picker**; IBus's own emoji picker keeps Super+; and gets Super+. back on uninstall.
 - **Categories are words, never icons** (Frank, 2026-11-06): no icon tab bar. Category words are search words ("food", "flags"); the search box hints at this; the current category title stays pinned at the top of the chart while scrolling, and Ctrl+Up/Down jumps between categories. A scroll-rail of names was considered and left out.
-- **The selected emoji is previewed in a side card** on the right, at roughly passport-photo size, with its name and shortcode (Frank, 2026-11-06: a laptop has more spare width than height).
+- **The selected emoji is previewed in a side card** on the right, full height, at roughly passport-photo size, with its name and shortcode, centred vertically (Frank, 2026-11-06: a laptop has more spare width than height).
 - **Text uses libadwaita's type classes** (.heading, .caption, .title-4), never px sizes, so it follows the system font and Large Text. Only emoji glyphs have px sizes.
 - **Cells are square** (glyph + 8 px each side); whole cells only, and the card takes the leftover width so the chart and card keep one gap.
 - **One highlight**: accent ring with a light 15 % fill; hovering moves it, there is no separate hover fill. The search field keeps its native focus ring.
