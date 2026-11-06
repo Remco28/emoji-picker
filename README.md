@@ -2,6 +2,8 @@
 
 A keyboard-first emoji picker for Ubuntu / GNOME on Wayland. Emoji only.
 
+Version 1.0, in daily use on Ubuntu 26.04 (GNOME 50, Wayland).
+
 Press **Super+.**, type a few words or a whole sentence, press **Enter**: the
 emoji appears in the app you were typing in, with nothing left behind.
 
@@ -81,8 +83,8 @@ then log out and back in once. Your emoji history and settings stay in
 | Enter | insert the highlighted emoji |
 | Tab | skin tones for the highlighted emoji (Tab or Esc to go back) |
 | Ctrl+C | copy instead of inserting |
-| Ctrl+plus / Ctrl+minus | bigger / smaller emoji |
-| Esc | clear the search; on an empty search, close |
+| Ctrl+plus / Ctrl+minus / Ctrl+0 | bigger / smaller / default size emoji |
+| Esc | close skin tones; clear the search; on an empty search, close |
 | `:fire` | search shortcodes |
 
 ## Limits
@@ -98,7 +100,8 @@ then log out and back in once. Your emoji history and settings stay in
   input source, and GNOME then shows its indicator. US users lose nothing,
   since US is GNOME's fallback anyway.
 - **English search only.**
-- **GNOME only**, tested on Ubuntu 26.04 (GNOME 50, Wayland).
+- **GNOME only.** Used on Ubuntu 26.04 (GNOME 50, Wayland); the installer
+  and tests also run on Ubuntu 24.04 (GNOME 46). Other desktops are untested.
 
 ## Troubleshooting
 
@@ -130,6 +133,10 @@ Known gaps: "vet" does not lead to 🏥; after "american flag happy" the
 American Samoa flag ranks second. The record is in `review-loop/prototype/`.
 
 ## Development
+
+How the pieces fit, and the mistakes that are easy to make:
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Design decisions:
+[docs/DESIGN.md](docs/DESIGN.md).
 
 ```
 bin/emoji-picker                             # run from the clone, without installing
