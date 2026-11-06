@@ -13,7 +13,9 @@ $XDG_RUNTIME_DIR/emoji-picker-ibus.sock, one JSON reply:
 context whenever no app has focus, and a commit there is silently dropped,
 so the picker uses the counter to wait until a real app has taken focus
 after its own window hid. "since_ms" is the time since the last focus
-change. Every event is logged with a timestamp for diagnosis.
+change. Focus changes and commits are logged with a timestamp for diagnosis
+(never keys or text you type; cursor moves are not logged, as they come with
+nearly every keystroke).
 
 The engine is created with has-focus-id, so IBus (1.5.27+) also says which
 client took focus; the internal context is called "fake". The status
@@ -100,9 +102,6 @@ class PassiveEngine(IBus.Engine):
 
     def do_set_capabilities(self, caps):
         log(f"set_capabilities 0x{caps:x}")
-
-    def do_set_cursor_location(self, x, y, w, h):
-        log(f"cursor_location {x},{y} {w}x{h}")
 
     def do_set_content_type(self, purpose, hints):
         log(f"content_type purpose={purpose} hints=0x{hints:x}")

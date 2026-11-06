@@ -485,6 +485,12 @@ class PickerWindow(Adw.ApplicationWindow):
         ok, why, st = insert.preflight()
         log(f"chose {char!r}; preflight ok={ok} {why} status={st}")
         if not ok:
+            from .setup_steps import setup_pending
+            if setup_pending():
+                why = "setup finishes when you log out and back in"
+            elif st is None or not st.get("enabled"):
+                why = ("this keyboard has no emoji support: pick one \u201cwith emoji\u201d, "
+                       "or run the installer again to add it")
             self._copy(char, reason=why)
             return
         self.mode = "inserting"
@@ -533,6 +539,8 @@ class PickerWindow(Adw.ApplicationWindow):
             self.status_name.set_label(msg if not close_after_ms or got != char
                                        else f"Copied {char}: press Ctrl+V to paste.")
             self.status_hint.set_label("")
+            self.status_name.set_ellipsize(0)   # NONE: a fallback message must be read in full
+            self.status_name.set_wrap(True)
             if close_after_ms and got == char:
                 GLib.timeout_add(close_after_ms, lambda: (self._quit(), False)[1])
 

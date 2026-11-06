@@ -26,9 +26,11 @@ class InsertThroughIBusTest(unittest.TestCase):
         comp = os.path.join(cls.tmp, "comp")
         os.makedirs(run, mode=0o700)
         os.makedirs(comp)
-        with open(os.path.join(ROOT, "engine", "emoji-picker.xml.in"), encoding="utf-8") as f:
-            xml = (f.read().replace("@EXEC@", os.path.join(ROOT, "engine", "engine.py"))
-                   .replace("@LAYOUT@", "us").replace("@VARIANT_ELEMENT@", ""))
+        # the same component install.sh writes: one engine per layout,
+        # started the way the installed one is (/usr/bin/python3 -I)
+        from emoji_picker import system
+        xml = system.component(f"/usr/bin/python3 -I {os.path.join(ROOT, 'engine', 'engine.py')}",
+                               ["us", "de+nodeadkeys"], "test")
         with open(os.path.join(comp, "emoji-picker.xml"), "w", encoding="utf-8") as f:
             f.write(xml)
         cls.sock = os.path.join(run, "ibus.sock")
@@ -62,7 +64,7 @@ class InsertThroughIBusTest(unittest.TestCase):
         cls.target = cls.bus.create_input_context("target-app")
         cls.target.set_capabilities(IBus.Capabilite.FOCUS)
         cls.target.connect("commit-text", lambda _ic, t: cls.committed.append(t.get_text()))
-        cls.ibus_engine("emoji-picker")
+        cls.ibus_engine("emoji-picker:us")
         cls.target.focus_in()
         cls.pump_until(lambda: os.path.exists(cls.engine_sock), 10)
 
@@ -160,10 +162,26 @@ class InsertThroughIBusTest(unittest.TestCase):
         self.ibus_engine("xkb:us::eng")
         self.pump(0.5)
         ok, why, _st = insert.preflight(self.engine_sock)
-        self.ibus_engine("emoji-picker")
+        self.ibus_engine("emoji-picker:us")
         self.pump(0.5)
         self.assertFalse(ok)
         self.assertIn("not the active input source", why)
+
+    def test_6_both_layout_engines_load_and_insert(self):
+        from emoji_picker import system
+        r = subprocess.run(["ibus", "list-engine"], env=self.env, capture_output=True, text=True)
+        listed = system.listed_engines(r.stdout)
+        self.assertIn("emoji-picker:us", listed, r.stdout[-500:])
+        self.assertIn("emoji-picker:de+nodeadkeys", listed)
+        try:
+            self.ibus_engine("emoji-picker:de+nodeadkeys")
+            self.pump(0.5)
+            r = self.run_insert("🎉", refocus_after_ms=60)
+            self.assertEqual(r.get("r"), "inserted", r)
+            self.assertEqual(self.committed, ["🎉"])
+        finally:
+            self.ibus_engine("emoji-picker:us")
+            self.pump(0.5)
 
     def test_5_preflight_fails_when_engine_is_unreachable(self):
         from emoji_picker import insert

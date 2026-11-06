@@ -17,6 +17,10 @@ def parse_args(argv):
     ap.add_argument("--print", dest="print_only", action="store_true",
                     help="print the chosen emoji instead of inserting it")
     ap.add_argument("--version", action="version", version=f"emoji-picker {__version__}")
+    ap.add_argument("--doctor", action="store_true",
+                    help="print what is installed and active, for bug reports")
+    ap.add_argument("--finish-setup", action="store_true",
+                    help="(run once at login by the installer) switch keyboards to the emoji ones")
     # test hooks (not for everyday use)
     ap.add_argument("--screenshot", help=argparse.SUPPRESS)
     ap.add_argument("--keys", help=argparse.SUPPRESS)
@@ -26,6 +30,9 @@ def parse_args(argv):
 
 def main(argv=None):
     args = parse_args(sys.argv[1:] if argv is None else argv)
+    if args.doctor or args.finish_setup:
+        from . import setup_steps
+        return setup_steps.doctor() if args.doctor else setup_steps.finish_setup()
     import gi
     gi.require_version("Gtk", "4.0")
     gi.require_version("Adw", "1")

@@ -1,3 +1,5 @@
+import os
+import tempfile
 import unittest
 
 from emoji_picker import system as s
@@ -33,7 +35,8 @@ class SourcesTest(unittest.TestCase):
     def test_restore_prototype_and_empty(self):
         self.assertEqual(s.restore([("ibus", "emoji-picker"), ("xkb", "us")]), [("xkb", "us")])
         self.assertEqual(s.restore([("ibus", "emoji-picker")]), [("xkb", "us")])
-        self.assertEqual(s.restore([]), [("xkb", "us")])
+        self.assertEqual(s.restore([]), [])                   # nothing of ours: unchanged
+        self.assertEqual(s.restore([("ibus", "mozc-jp")]), [("ibus", "mozc-jp")])
 
     def test_duplicates_collapse(self):
         self.assertEqual(s.convert([("xkb", "us"), ("ibus", "emoji-picker:us")]),
@@ -44,6 +47,22 @@ class SourcesTest(unittest.TestCase):
         self.assertEqual(s.fmt_sources(s.parse(text)), text)
         self.assertEqual(s.parse("@a(ss) []"), [])
         self.assertEqual(s.fmt_sources([]), "@a(ss) []")
+
+    def test_convert_only_engines_ibus_knows(self):
+        src = [("ibus", "emoji-picker"), ("xkb", "us"), ("xkb", "de")]
+        self.assertEqual(s.convert(src, known={"emoji-picker:us"}),
+                         [("ibus", "emoji-picker:us"), ("xkb", "de")])
+        # nothing known yet: the prototype engine stays, so typing still inserts
+        self.assertEqual(s.convert(src, known=set()), src)
+
+    def test_registry_union(self):
+        with tempfile.TemporaryDirectory() as d:
+            with open(os.path.join(d, "1000"), "w") as f:
+                f.write("us\nde+nodeadkeys\n")
+            with open(os.path.join(d, "1001"), "w") as f:
+                f.write("us\nfr(oss)\n../evil\n\n")
+            self.assertEqual(s.registry_ids(d), ["us", "de+nodeadkeys", "fr(oss)"])
+        self.assertEqual(s.registry_ids("/nonexistent"), [])
 
     def test_missing_engines(self):
         listing = "language: English\n  xkb:us::eng - English (US)\n  emoji-picker:us - US, with emoji\n"
@@ -76,12 +95,6 @@ class ComponentTest(unittest.TestCase):
         self.assertIn("<layout_variant>nodeadkeys</layout_variant>", xml)
         self.assertEqual(xml.count("<layout_variant>"), 1)  # never an empty one
         self.assertIn("<exec>/opt/x/engine.py --ibus</exec>", xml)
-
-    def test_installed_engines_are_read_back(self):
-        xml = s.component("/e", ["us", "de+nodeadkeys"], "1.0.0", info=info)
-        self.assertEqual(s.installed_ids(xml), ["us", "de+nodeadkeys"])
-        self.assertEqual(s.installed_ids("<component><name>other</name></component>"), [])
-        self.assertEqual(s.installed_ids("not xml"), [])
 
     def test_escaping(self):
         xml = s.component("/a&b/engine.py", ["us"], "1.0.0", info=lambda x: ("eng", "en", "A<B"))

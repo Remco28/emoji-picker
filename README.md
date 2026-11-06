@@ -2,12 +2,8 @@
 
 A keyboard-first emoji picker for Ubuntu / GNOME on Wayland. Emoji only.
 
-Press **Ctrl+Alt+E**, type a few words or a whole sentence, press **Enter**:
-the emoji appears in the app you were typing in, with nothing left behind.
-
-**Status: working prototype**, tested headlessly on Ubuntu 24.04 (X11) and
-awaiting its first real test on Ubuntu 26.04 (Wayland). See "What is known"
-below.
+Press **Super+.**, type a few words or a whole sentence, press **Enter**: the
+emoji appears in the app you were typing in, with nothing left behind.
 
 ## How it works
 
@@ -15,17 +11,18 @@ below.
   search terms written once, at build time, by an LLM (for example 🇺🇸 gets
   "american flag", "fourth of july"; 🏥 gets "surgery", "get well soon").
   The picker itself does plain keyword search in under a millisecond.
-- **Insertion without the clipboard.** A small passive input-method engine
-  (IBus) commits the emoji straight into the focused app. It passes every
-  key through, so typing is unchanged. If it cannot insert, the picker copies
-  the emoji instead and says so.
+- **Insertion without the clipboard.** Your keyboard layout is swapped for
+  the same layout "with emoji": a small IBus input method that passes every
+  key through unchanged and, when the picker asks, types the emoji into the
+  focused app. If it cannot, the picker copies the emoji and says why.
 - **Learns you.** Recent and frequent emoji first; the skin tone you choose
   is remembered per emoji and becomes your default.
 
 ## Install
 
-Needs Python 3 with GTK 4, libadwaita and IBus bindings (present on Ubuntu
-GNOME) and the Noto Color Emoji font.
+Needs Ubuntu (or another distribution) with GNOME, IBus, Python 3 and the
+Noto Color Emoji font. On Ubuntu GNOME these are already installed; otherwise:
+`sudo apt install python3-gi gir1.2-gtk-4.0 gir1.2-adw-1 gir1.2-ibus-1.0 fonts-noto-color-emoji`.
 
 ```
 git clone https://github.com/Remco28/emoji-picker
@@ -34,10 +31,46 @@ cd emoji-picker
 ./install.sh             # asks for your password once
 ```
 
-Then log out and back in once (so IBus loads the engine). Your original
-input sources and shortcut list are backed up to
-`~/.local/state/emoji-picker/backup/`. `./uninstall.sh` removes only what
-the installer added.
+Then **log out and back in once**. Until then Super+. already opens the
+picker, but Enter copies the emoji (paste with Ctrl+V) instead of typing it.
+
+After installing you can delete the clone: the app lives in
+`/usr/local/lib/emoji-picker`.
+
+To use another key than Super+.: `./install.sh --shortcut '<Control><Alt>e'`.
+
+### What the installer changes
+
+| Change | Undone by uninstall |
+|---|---|
+| The app in `/usr/local/lib/emoji-picker`, `/usr/local/bin/emoji-picker`, an app entry and icon | removed (once no user on the computer still uses it) |
+| `/usr/share/ibus/component/emoji-picker.xml`: one "with emoji" engine per keyboard layout | removed, or rewritten for the users still using it |
+| Your input sources: each keyboard layout becomes the same layout "with emoji" (other input methods are kept) | each goes back to the plain layout |
+| A custom shortcut "Emoji Picker" on Super+. | removed, unless you pointed it at something else |
+| IBus's own emoji picker lets go of Super+. (keeps Super+;) | Super+. given back |
+
+Your original settings are backed up first, to
+`~/.local/state/emoji-picker/backup/`. The installer never runs `ibus restart`.
+
+## Upgrade
+
+Pull (or clone) a newer version and run `./install.sh` again. The new version
+is installed beside the old one and switched to in one step, so a failed
+upgrade leaves the old one working.
+
+If you add a keyboard layout in Settings later, run `./install.sh` again
+from a clone to give it emoji too; until then the picker copies while that
+layout is active.
+
+## Uninstall
+
+```
+emoji-picker-uninstall --dry-run   # see every step first
+emoji-picker-uninstall
+```
+
+then log out and back in once. Your emoji history and settings stay in
+`~/.local/state/emoji-picker`; delete that folder if you want them gone.
 
 ## Keys
 
@@ -52,11 +85,35 @@ the installer added.
 | Esc | clear the search; on an empty search, close |
 | `:fire` | search shortcodes |
 
-## What is known
+## Limits
 
-Search quality is measured against a frozen answer key
-(`tests/eval_queries.json`), including 60 queries written blind by another
-vendor's model:
+- **Other input methods.** IBus runs one input method at a time. While you
+  type with another one (Japanese, Chinese, Korean...), the picker copies the
+  emoji for you to paste instead of typing it.
+- **No plain keyboard layout.** If your input sources contain no keyboard
+  layout at all, there is nothing to add emoji to, and the picker copies.
+- **English search only.**
+- **GNOME only**, tested on Ubuntu 26.04 (GNOME 50, Wayland).
+
+## Troubleshooting
+
+```
+emoji-picker --doctor
+```
+
+prints the version, your input sources, the engines IBus knows, the
+shortcut, and the last lines of the logs in `~/.local/state/emoji-picker/`
+(`picker.log`, `engine.log`, `setup.log`). Include it in a bug report; it
+shows the emoji you inserted recently, and nothing you typed.
+
+- *Super+. opens IBus's emoji box instead:* log out and back in once.
+- *"Setup finishes when you log out and back in":* exactly that; if it
+  keeps saying so after a login, `--doctor` and `setup.log` say why.
+
+## Search quality
+
+Measured against a frozen answer key (`tests/eval_queries.json`), including
+60 queries written blind by another vendor's model:
 
 | | plain keywords | with build-time terms |
 |---|---|---|
@@ -64,19 +121,19 @@ vendor's model:
 | held-out tuning half | 21/30 | 28/30 |
 | blind judge (Gemini, 30 queries, both orders) | preferred 4 times | preferred 14 times (12 ties) |
 
-Known gaps: "vet" does not lead to 🏥 (no term links them); after
-"american flag happy" the American Samoa flag still ranks second; startup
-time on a real Wayland desktop is not measured yet. The full record is in
-`review-loop/prototype/`.
+Known gaps: "vet" does not lead to 🏥; after "american flag happy" the
+American Samoa flag ranks second. The record is in `review-loop/prototype/`.
 
 ## Development
 
 ```
-python3 -m unittest discover -s tests -t .   # unit + headless IBus tests
+bin/emoji-picker                             # run from the clone, without installing
+python3 -m unittest discover -s tests -t .   # unit, installer and headless IBus tests
 python3 tools/eval.py                        # search quality
 python3 tools/build_data.py                  # rebuild emoji data (pinned emojibase)
 python3 tools/enrich.py                      # regenerate search terms (needs `claude`)
 ```
 
-Emoji data: [emojibase](https://emojibase.dev) (MIT), derived from Unicode
-CLDR. The `probe/` folder holds the earlier insertion experiments.
+License: MIT (`LICENSE`). Emoji data: [emojibase](https://emojibase.dev)
+(MIT), derived from Unicode CLDR. The `probe/` folder holds the earlier
+insertion experiments.

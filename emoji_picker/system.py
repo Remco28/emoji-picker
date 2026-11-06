@@ -7,21 +7,26 @@ changed later) is kept.
 
     python3 -m emoji_picker.system engines "<sources>"
         -> one line per xkb source: "<xkb id>"
-    python3 -m emoji_picker.system component EXEC [INSTALLED_XML] -- ID...
-        -> IBus component XML with an engine per xkb id (plus ours already in
-           INSTALLED_XML, so another user's engines are kept)
-    python3 -m emoji_picker.system convert "<sources>"   -> sources using our engines
-    python3 -m emoji_picker.system restore "<sources>"   -> sources back to plain xkb
-    python3 -m emoji_picker.system missing "<sources>" "<ibus list-engine output>"
-        -> our engines the sources need that IBus does not list yet
-    python3 -m emoji_picker.system hotkey-remove "<list>" KEY  -> list without KEY
-    python3 -m emoji_picker.system hotkey-restore "<list>" KEY -> list with KEY first
-    python3 -m emoji_picker.system add-path "<paths>" PATH / remove-path ...
+    system.py component VERSION EXEC REGISTRY_DIR
+        -> IBus component XML with an engine for every layout listed in the
+           registry files (one per user who installed it)
+    system.py convert "<sources>" ["<ibus list-engine output>"]
+        -> sources using our engines (only engines IBus lists, if given)
+    system.py restore "<sources>"   -> sources back to plain xkb
+    system.py missing "<sources>" "<ibus list-engine output>"
+        -> our engines the converted sources need that IBus does not list yet
+    system.py has "<list>" KEY            -> exit status 0 when KEY is in the list
+    system.py hotkey-remove "<list>" KEY  -> list without KEY
+    system.py hotkey-restore "<list>" KEY -> list with KEY first
+    system.py add-path "<paths>" PATH / remove-path "<paths>" PATH
+
+It is run as a plain script with `python3 -I` (no package imports), so the
+installer can use it from a clone and uninstall from the installed copy.
 """
 import ast
+import os
 import re
 import sys
-from xml.etree import ElementTree
 from xml.sax.saxutils import escape
 
 PREFIX = "emoji-picker:"
@@ -70,21 +75,37 @@ def xkb_ids(sources):
     return out
 
 
-def convert(sources):
-    """Each ('xkb', ID) becomes our engine for ID, in place. The prototype's
-    engine is dropped. Anything else is kept as it is."""
+def convert(sources, known=None):
+    """Each ('xkb', ID) becomes our engine for ID, in place, and the
+    prototype's engine is dropped. With `known` (engine names IBus lists),
+    only layouts whose engine IBus knows are converted, and the prototype's
+    engine is dropped only once one of ours replaces it. Anything else is
+    kept as it is."""
     out = []
-    for kind, name in (tuple(s) for s in sources):
+    items = [tuple(s) for s in sources]
+    ours = [engine_name(n) for k, n in items if k == "xkb"]
+    if known is not None:
+        ours = [e for e in ours if e in known]
+    for kind, name in items:
         if (kind, name) == PROTOTYPE:
-            continue
-        item = ("ibus", engine_name(name)) if kind == "xkb" else (kind, name)
+            if known is None or ours:
+                continue
+            item = (kind, name)
+        elif kind == "xkb" and engine_name(name) in ours:
+            item = ("ibus", engine_name(name))
+        else:
+            item = (kind, name)
         if item not in out:
             out.append(item)
     return out
 
 
 def restore(sources):
-    """The reverse of convert. Never returns an empty list."""
+    """The reverse of convert. A list with nothing of ours comes back as it
+    was; otherwise the result is never empty."""
+    items = [tuple(s) for s in sources]
+    if not any(k == "ibus" and (n == PROTOTYPE[1] or xkb_id_of(n)) for k, n in items):
+        return items
     out = []
     for kind, name in (tuple(s) for s in sources):
         if (kind, name) == PROTOTYPE:
@@ -96,15 +117,39 @@ def restore(sources):
     return out or [("xkb", "us")]
 
 
-def missing(sources, list_engine_output):
-    """Our engines the converted sources would need that IBus does not know."""
+def listed_engines(list_engine_output):
+    """Engine names in `ibus list-engine` output ("  <name> - <longname>")."""
     known = set()
     for line in list_engine_output.splitlines():
-        # `ibus list-engine` prints "  <name> - <longname>" under language headings
         m = re.match(r"\s+(\S+) - ", line)
         if m:
             known.add(m.group(1))
+    return known
+
+
+def missing(sources, list_engine_output):
+    """Our engines the converted sources would need that IBus does not know."""
+    known = listed_engines(list_engine_output)
     return [engine_name(x) for x in xkb_ids(sources) if engine_name(x) not in known]
+
+
+def registry_ids(registry_dir):
+    """Every layout any user installed it for (files named by uid)."""
+    out = []
+    try:
+        names = sorted(os.listdir(registry_dir))
+    except OSError:
+        return out
+    for n in names:
+        try:
+            with open(os.path.join(registry_dir, n), encoding="utf-8") as f:
+                for line in f:
+                    xid = line.strip()
+                    if re.fullmatch(r"[A-Za-z0-9_()+-]+", xid) and xid not in out:
+                        out.append(xid)
+        except OSError:
+            pass
+    return out
 
 
 # ---- hotkeys and keybinding paths ----------------------------------------
@@ -174,22 +219,6 @@ COMPONENT_XML = """<?xml version="1.0" encoding="utf-8"?>
 """
 
 
-def installed_ids(xml_text):
-    """xkb ids of our engines in an installed component (ours only)."""
-    try:
-        root = ElementTree.fromstring(xml_text)
-    except ElementTree.ParseError:
-        return []
-    if root.findtext("name") != "org.freedesktop.IBus.EmojiPicker":
-        return []
-    out = []
-    for e in root.iter("engine"):
-        xid = xkb_id_of(e.findtext("name") or "")
-        if xid and xid not in out:
-            out.append(xid)
-    return out
-
-
 def component(exec_path, ids, version, info=layout_info):
     parts = []
     for xid in ids:
@@ -212,23 +241,18 @@ def main(argv):
         for xid in xkb_ids(parse(args[0])):
             print(xid)
     elif cmd == "component":
-        sep = args.index("--")
-        exec_path, rest, ids = args[0], args[1:sep], args[sep + 1:]
-        if rest:
-            try:
-                with open(rest[0], encoding="utf-8") as f:
-                    ids = ids + [x for x in installed_ids(f.read()) if x not in ids]
-            except OSError:
-                pass
-        from . import __version__
-        print(component(exec_path, ids, __version__), end="")
+        version, exec_path, registry = args
+        print(component(exec_path, registry_ids(registry), version), end="")
     elif cmd == "convert":
-        print(fmt_sources(convert(parse(args[0]))))
+        known = listed_engines(args[1]) if len(args) > 1 else None
+        print(fmt_sources(convert(parse(args[0]), known)))
     elif cmd == "restore":
         print(fmt_sources(restore(parse(args[0]))))
     elif cmd == "missing":
         for name in missing(convert(parse(args[0])), args[1]):
             print(name)
+    elif cmd == "has":
+        sys.exit(0 if args[1] in parse(args[0]) else 1)
     elif cmd == "hotkey-remove":
         print(fmt_strings(without(parse(args[0]), args[1])))
     elif cmd == "hotkey-restore":
