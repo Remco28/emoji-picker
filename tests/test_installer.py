@@ -218,6 +218,53 @@ esac
         self.assertIn("Screenshot tool", out)
         self.assertIn(p, self.get(KB, "custom-keybindings"))   # theirs is kept
 
+    def test_switching_to_another_key_gives_super_dot_back(self):
+        self.set(SRC, "sources", "[('xkb', 'us')]")
+        self.install()
+        self.assertEqual(self.get(HOTKEY, "hotkey"), "['<Super>semicolon']")
+        self.install("--shortcut", "<Control><Alt>e")
+        self.assertEqual(self.get(HOTKEY, "hotkey"), "['<Super>period', '<Super>semicolon']")
+        self.uninstall()
+        self.assertEqual(self.get(HOTKEY, "hotkey"), "['<Super>period', '<Super>semicolon']")
+
+    def test_prototype_with_only_its_engine_keeps_its_layout(self):
+        # a prototype user who removed the plain layout: the old engine typed German
+        comp_dir = os.path.dirname(self.component)
+        os.makedirs(comp_dir)
+        with open(self.component, "w") as f:
+            f.write("<component><engines><engine><name>emoji-picker</name><language>other</language>"
+                    "<layout>de</layout>\n<layout_variant>nodeadkeys</layout_variant></engine>"
+                    "</engines></component>")
+        self.set(SRC, "sources", "[('ibus', 'emoji-picker')]")
+        self.ibus_lists("emoji-picker")
+        self.install()
+        with open(self.component) as f:
+            self.assertIn("<name>emoji-picker:de+nodeadkeys</name>", f.read())
+        self.assertEqual(self.get(SRC, "sources"), "[('ibus', 'emoji-picker')]")  # until login
+        self.ibus_lists("emoji-picker:de+nodeadkeys")
+        self.finish()
+        self.assertEqual(self.get(SRC, "sources"), "[('ibus', 'emoji-picker:de+nodeadkeys')]")
+        self.uninstall()
+        self.assertEqual(self.get(SRC, "sources"), "[('xkb', 'de+nodeadkeys')]")
+
+    def test_uninstall_does_not_duplicate_a_readded_layout(self):
+        self.set(SRC, "sources", "[('xkb', 'us')]")
+        self.install()
+        self.set(SRC, "sources", "[('ibus', 'emoji-picker:us'), ('xkb', 'us')]")
+        self.uninstall()
+        self.assertEqual(self.get(SRC, "sources"), "[('xkb', 'us')]")
+
+    def test_setup_from_the_installed_copy_adds_a_new_layout(self):
+        self.set(SRC, "sources", "[('xkb', 'us')]")
+        self.install()
+        self.set(SRC, "sources", "[('xkb', 'us'), ('xkb', 'de')]")
+        self.run_script([os.path.join(self.bin, "emoji-picker"), "--setup", "--root", self.root])
+        with open(self.component) as f:
+            xml = f.read()
+        self.assertIn("emoji-picker:de<", xml)
+        with open(os.path.join(self.lib, "current", "VERSION")) as f:
+            self.assertNotIn("nogit", f.read())   # the commit carried over from the first install
+
     def test_uninstall_keeps_a_shortcut_the_user_repointed(self):
         self.set(SRC, "sources", "[('xkb', 'us')]")
         self.install()

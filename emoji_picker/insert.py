@@ -58,6 +58,23 @@ def preflight(path=SOCK_PATH):
     return True, "", st
 
 
+def why_not_active():
+    """Why our engine is not the one typing, in the user's terms, or None."""
+    import subprocess
+    try:
+        r = subprocess.run(["ibus", "engine"], capture_output=True, text=True, timeout=1)
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    name = r.stdout.strip()
+    if r.returncode != 0 or not name or name.startswith("emoji-picker:"):
+        return None
+    if name.startswith("xkb:") or name == "emoji-picker":
+        return ("this keyboard has no emoji support yet: run \u2018emoji-picker --setup\u2019 "
+                "to add it")
+    return (f"another input method is active ({name}); switch to a keyboard "
+            "\u201cwith emoji\u201d to type emoji directly")
+
+
 class Inserter:
     """Polls the engine after the window hid and commits when it is safe.
 

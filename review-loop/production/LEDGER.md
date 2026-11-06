@@ -31,3 +31,33 @@ Cast: critic = Codex gpt-6-luna (plan + prototype); blind solver = Claude Opus 5
 
 Believed, and wrong: "keeping every installed engine protects other users" (plan v1 §2) —
 it protected their engines at install time but uninstall still removed everything.
+
+## Peer pass 2, 2026-11-05, plan v2 (b86e6a0); build started in parallel
+Cast: fresh critic = Gemini gemini-4-argon-high (plan v2 + prototype at 9b9275e), read-only.
+Predictions (written before it reported, in my notes, not committed first — so weak):
+fewer HIGHs than pass 1, findings mostly in edge setups (non-US, multi-user).
+
+| # | Finding | Reader (their rating) | Ours | From | How checked | Done |
+|---|---|---|---|---|---|---|
+| 12 | With every layout an IBus source, GNOME skips them until IBus is ready (login) or when it crashes, falling back to 'us' | Gemini (HIGH) | tier 1 (read GNOME 46 ibusManager.getEngineDesc / keyboard.js), MEDIUM: no effect on a US layout (owner); non-US users get US briefly at login or during an IBus crash. Inherent to decision 4 | new | read source | README limit; to owner as a decision |
+| 13 | longname/language: "German (German, with emoji)"; get_languages_for_layout('de+nodeadkeys') = [] ; multilingual layouts mislabelled | Gemini (HIGH) | (1)(2) false, measured: "German (with emoji)", de+nodeadkeys → deu. (3) true: 'be' → French, 'ch' → gsw. LOW | new | ran XkbInfo on 11 layouts | fixed: language chosen to match the display name, else whole display name in brackets |
+| 14 | Prototype user with only ('ibus','emoji-picker') left: component overwritten, source dropped, falls back to 'us', uninstall can't recover the layout | Gemini (HIGH) | tier 1 (traced in code), HIGH, setup not in use (owner kept ('xkb','us')) | new | reproduced in test | fixed: prototype layout read from the old component, becomes emoji-picker:<it>; test |
+| 15 | Clone deleted → no installer for a layout added later; helper files missing from install | Gemini (HIGH) | helpers: tier 0 for the build (system.py is in the package). Re-run: tier 1, MEDIUM | new | read build | fixed: installed copy carries install.sh + data; `emoji-picker --setup`; test |
+| 16 | sources then mru-sources written separately: GNOME resets the active layout | Gemini (MEDIUM) | tier 2 → checked: GNOME uses its in-memory MRU after start, so write order does not matter; after the login swap the first layout becomes active. LOW, declined | new | read keyboard.js _updateMruSources | decline → fix auditor |
+| 17 | `sudo ibus write-cache` writes root's cache | Gemini (MEDIUM) | tier 0: the build never runs write-cache under sudo | n/a | read install/uninstall | none |
+| 18 | `gsettings list-recursively` skips custom shortcuts, so the conflict check misses them | Gemini (MEDIUM) | tier 1, reproduced on a keyfile store | old (prototype) — fixed in passing since step 4 was rewritten | reproduced | fixed; test |
+| 19 | Copy message tells a Japanese-IME user to rerun the installer | Gemini (MEDIUM) | tier 1 (read), MEDIUM | new | read build | fixed: names the active engine; xkb → `--setup` |
+| 20 | `--shortcut` re-run orphans Super+. | Gemini (HIGH, on plan text) | built code already restores it; test added | n/a | test | test |
+| 21 | Same-commit re-run writes into the live version dir | Gemini | built code: unique names; already tested | n/a | test | none |
+| 22 | Substring match de vs de+nodeadkeys | Gemini | built code matches exact names; unit test added | n/a | test | test |
+| 23 | sudo refused/cancelled mid-uninstall leaves half-removed state | Gemini (MEDIUM) | tier 1, LOW (re-run finishes it) | new | read | fixed: `sudo -v` before any change (install and uninstall) |
+| 24 | Uninstall duplicates a re-added layout | Gemini | built code dedups; test added | n/a | test | test |
+| 25 | A second Super+. while the first picker is inserting/copying is swallowed (window presented, then quits) | Gemini (MEDIUM) | tier 1, reproduced under Xvfb; MEDIUM, how it is used now | old (prototype) | reproduced | fixed: reopen a fresh picker when the first finishes |
+| 26 | `-I` hides the script dir from sys.path | Gemini (LOW) | handled: launcher inserts current/; engine imports nothing local; IBus test runs it with -I | n/a | test | none |
+| 27 | Cut versioned dirs (direct install + one rename) | Gemini (cut) | declined: one rename of a non-empty dir over another is not atomic (mv -T fails on non-empty); the symlink switch is, and is tested | n/a | n/a | decline → fix auditor |
+
+Also found while building (not from a reader): the engine logged every cursor move,
+a disk write on nearly every keystroke (fixed); picker.log never rotated (fixed).
+
+Believed, and wrong: "the conflict check covers custom shortcuts" (prototype install.sh:92) —
+`gsettings list-recursively` skips relocatable schemas.

@@ -19,6 +19,9 @@ def parse_args(argv):
     ap.add_argument("--version", action="version", version=f"emoji-picker {__version__}")
     ap.add_argument("--doctor", action="store_true",
                     help="print what is installed and active, for bug reports")
+    ap.add_argument("--setup", nargs=argparse.REMAINDER, metavar="INSTALL_OPTIONS",
+                    help="run the installer again (after adding a keyboard layout); "
+                         "takes install.sh options such as --dry-run")
     ap.add_argument("--finish-setup", action="store_true",
                     help="(run once at login by the installer) switch keyboards to the emoji ones")
     # test hooks (not for everyday use)
@@ -30,8 +33,10 @@ def parse_args(argv):
 
 def main(argv=None):
     args = parse_args(sys.argv[1:] if argv is None else argv)
-    if args.doctor or args.finish_setup:
+    if args.doctor or args.finish_setup or args.setup is not None:
         from . import setup_steps
+        if args.setup is not None:
+            return setup_steps.run_installer(args.setup)
         return setup_steps.doctor() if args.doctor else setup_steps.finish_setup()
     import gi
     gi.require_version("Gtk", "4.0")
@@ -78,7 +83,11 @@ def main(argv=None):
 
     def on_activate(app):
         if app.get_windows():
-            app.get_windows()[0].present()
+            win = app.get_windows()[0]
+            if win.mode in ("inserting", "copied"):
+                win.reopen_requested = True   # opens once this one has finished
+            else:
+                win.present()
             return
         t = time.monotonic()
         data = load_emoji()
@@ -90,7 +99,12 @@ def main(argv=None):
         index = Index(data, enrichment, usage, max_version=cutoff, lazy=True)
         timings["index"] = time.monotonic() - t
         t = time.monotonic()
-        win = PickerWindow(app, index, usage, {"query": args.query, "print_only": args.print_only})
+        def reopen():
+            again = PickerWindow(app, index, usage, {"reopen": reopen})
+            again.present()
+
+        win = PickerWindow(app, index, usage, {"query": args.query, "print_only": args.print_only,
+                                               "reopen": reopen})
         timings["window"] = time.monotonic() - t
         state["win"] = win
 

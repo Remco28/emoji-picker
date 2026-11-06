@@ -62,13 +62,22 @@ def ibus_engines():
     return system.listed_engines(r.stdout)
 
 
+def installed_info():
+    try:
+        with open(os.path.join(state_dir(), "installed.json"), encoding="utf-8") as f:
+            return json.load(f)
+    except (OSError, ValueError):
+        return {}
+
+
 def convert_now(known):
     """Switch sources and mru-sources to our engines IBus knows. Returns the
     new sources, or None when nothing changed."""
     changed = None
+    proto = installed_info().get("prototype_layout") or None
     for key in ("sources", "mru-sources"):
         before = system.parse(gsettings("get", SRC_SCHEMA, key))
-        after = system.convert(before, known)
+        after = system.convert(before, known, proto)
         if after != [tuple(x) for x in before]:
             gsettings("set", SRC_SCHEMA, key, system.fmt_sources(after))
             if key == "sources":
@@ -175,3 +184,13 @@ def doctor(out=sys.stdout):
         for line in lines:
             print("  " + line.rstrip(), file=out)
     return 0
+
+
+def run_installer(argv):
+    """`emoji-picker --setup`: run install.sh from the copy this runs from."""
+    here = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    script = os.path.join(here, "install.sh")
+    if not os.path.exists(script):
+        print(f"no installer next to {here}", file=sys.stderr)
+        return 1
+    os.execv("/bin/bash", ["bash", script, *argv])

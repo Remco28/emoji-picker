@@ -4,6 +4,8 @@
 #   ./install.sh                       install or upgrade (asks for your password once)
 #   ./install.sh --dry-run             show every step without changing anything
 #   ./install.sh --shortcut '<Control><Alt>e'   use another key than Super+.
+#   emoji-picker --setup               run this again from the installed copy
+#                                      (after adding a keyboard layout)
 #
 # What it changes (./uninstall.sh, or emoji-picker-uninstall, undoes it all):
 #   1. installs the app under /usr/local (needs sudo), and the input engine
@@ -63,7 +65,8 @@ done
   || { echo "missing Python GTK 4 / libadwaita / IBus bindings for $PY" >&2;
        echo "on Ubuntu: sudo apt install python3-gi gir1.2-gtk-4.0 gir1.2-adw-1 gir1.2-ibus-1.0" >&2; exit 1; }
 VERSION=$("$PY" -I -c 'import sys; sys.path.insert(0, sys.argv[1]); import emoji_picker; print(emoji_picker.__version__)' "$HERE")
-COMMIT=$(git -C "$HERE" rev-parse --short HEAD 2>/dev/null || echo nogit)
+COMMIT=$(git -C "$HERE" rev-parse --short HEAD 2>/dev/null || cut -s -d' ' -f2 "$HERE/VERSION" 2>/dev/null || true)
+COMMIT=${COMMIT:-nogit}
 
 # Never take over a shortcut someone else put at our settings path.
 EXISTING=$(gsettings get "$KB_SCHEMA.custom-keybinding:$KB_PATH" name)
@@ -74,13 +77,23 @@ if [ "$EXISTING" != "''" ] && [ "$EXISTING" != "'Emoji Picker'" ]; then
 fi
 
 SOURCES=$(gsettings get $SRC_SCHEMA sources)
-mapfile -t LAYOUTS < <(sys engines "$SOURCES")
+# a prototype (0.1) install had one engine, typing with one layout: carry that layout over
+PROTO_ID=""
+if printf '%s' "$SOURCES" | grep -qF "('ibus', 'emoji-picker')"; then
+  PROTO_ID=$(sys prototype-layout "$COMPONENT"); PROTO_ID=${PROTO_ID:-us}
+fi
+mapfile -t LAYOUTS < <(sys engines "$SOURCES" --proto "$PROTO_ID")
 echo "emoji-picker $VERSION ($COMMIT)"
 if [ ${#LAYOUTS[@]} -eq 0 ]; then
   say "NOTE: you have no plain keyboard layout among your input sources, so there is"
   say "no keyboard to add emoji to. The picker will copy emoji for you to paste."
 else
   say "keyboard layouts to add emoji to: ${LAYOUTS[*]}"
+fi
+
+if [ "$DRY" = 0 ] && [ -z "$ROOT" ]; then
+  # ask for the password before changing anything
+  sudo -v || { echo "Nothing was changed." >&2; exit 1; }
 fi
 
 # ---- 1. backup ---------------------------------------------------------
@@ -112,12 +125,13 @@ else
   "${SUDO[@]}" mkdir -p "$LIB/versions" "$LIB/users"
   "${SUDO[@]}" rm -rf -- "${DEST:?}.tmp"
   "${SUDO[@]}" mkdir -p "$DEST.tmp"
-  tar -C "$HERE" --exclude=__pycache__ -cf - emoji_picker engine/engine.py uninstall.sh LICENSE \
+  tar -C "$HERE" --exclude=__pycache__ -cf - emoji_picker engine/engine.py install.sh uninstall.sh \
+      LICENSE data \
     | "${SUDO[@]}" tar -C "$DEST.tmp" --no-same-owner -xf -
   printf '%s %s\n' "$VERSION" "$COMMIT" | "${SUDO[@]}" tee "$DEST.tmp/VERSION" >/dev/null
   "${SUDO[@]}" "$PY" -I -m compileall -q -s "$DEST.tmp" -p "$DEST" "$DEST.tmp" >/dev/null
   "${SUDO[@]}" chmod -R u=rwX,go=rX "$DEST.tmp"
-  "${SUDO[@]}" chmod 755 "$DEST.tmp/engine/engine.py" "$DEST.tmp/uninstall.sh"
+  "${SUDO[@]}" chmod 755 "$DEST.tmp/engine/engine.py" "$DEST.tmp/install.sh" "$DEST.tmp/uninstall.sh"
   "${SUDO[@]}" mv -T "$DEST.tmp" "$DEST"
   PREVIOUS=$(readlink "$LIB/current" 2>/dev/null || true)
   "${SUDO[@]}" ln -sfn "versions/$NAME" "$LIB/current.new"
@@ -201,23 +215,24 @@ run gsettings set $KB_SCHEMA custom-keybindings \
   "$(sys add-path "$(gsettings get $KB_SCHEMA custom-keybindings)" "$KB_PATH")"
 if [ "$DRY" = 0 ]; then
   "$PY" -I -c 'import json,sys
-v, c, lib, key, cmd, removed, path = sys.argv[1:]
+v, c, lib, key, cmd, removed, proto, path = sys.argv[1:]
 json.dump({"version": v, "commit": c, "lib": lib, "shortcut": key, "command": cmd,
-           "removed_ibus_hotkey": removed == "1"}, open(path, "w"), indent=1)' \
-    "$VERSION" "$COMMIT" "$LIB" "$SHORTCUT" "$BIN/emoji-picker" "$REMOVED" "$STATE/installed.json"
+           "removed_ibus_hotkey": removed == "1", "prototype_layout": proto},
+          open(path, "w"), indent=1)' \
+    "$VERSION" "$COMMIT" "$LIB" "$SHORTCUT" "$BIN/emoji-picker" "$REMOVED" "$PROTO_ID" "$STATE/installed.json"
 fi
 
 # ---- 5. input sources ------------------------------------------------------
 step "5. Swap your keyboard layouts for the same layouts with emoji"
 ENGINES=$(ibus list-engine 2>/dev/null || true)
-MISSING=$(sys missing "$SOURCES" "$ENGINES")
+MISSING=$(sys missing "$SOURCES" "$ENGINES" --proto "$PROTO_ID")
 if [ ${#LAYOUTS[@]} -eq 0 ]; then
   say "nothing to swap"
   PENDING=0
 else
   for key in sources mru-sources; do
     BEFORE=$(gsettings get $SRC_SCHEMA $key)
-    AFTER=$(sys convert "$BEFORE" "$ENGINES")   # only engines IBus already knows
+    AFTER=$(sys convert "$BEFORE" --known "$ENGINES" --proto "$PROTO_ID")   # only engines IBus knows
     [ "$AFTER" = "$BEFORE" ] || run gsettings set $SRC_SCHEMA $key "$AFTER"
   done
   if [ -n "$MISSING" ]; then
@@ -258,4 +273,5 @@ else
   say "$NICE opens the picker."
 fi
 say "Check the setup any time: emoji-picker --doctor"
+say "Added a keyboard layout later? emoji-picker --setup gives it emoji too."
 say "To remove it: emoji-picker-uninstall"

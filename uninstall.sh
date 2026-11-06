@@ -68,6 +68,13 @@ except Exception: v = ""
 print({True: "1", False: "0"}.get(v, v))' "$STATE/installed.json" "$1"
 }
 
+if [ "$DRY" = 0 ] && [ -z "$ROOT" ]; then
+  # ask for the password before changing anything, so a wrong password or
+  # Ctrl+C leaves everything as it was
+  echo "Removing Emoji Picker needs your password once (for files in /usr)."
+  sudo -v || { echo "Nothing was changed." >&2; exit 1; }
+fi
+
 step "1. Put back your plain keyboard layouts (other input sources are kept)"
 for key in sources mru-sources; do
   BEFORE=$(gsettings get $SRC_SCHEMA $key)

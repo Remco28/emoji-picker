@@ -488,9 +488,8 @@ class PickerWindow(Adw.ApplicationWindow):
             from .setup_steps import setup_pending
             if setup_pending():
                 why = "setup finishes when you log out and back in"
-            elif st is None or not st.get("enabled"):
-                why = ("this keyboard has no emoji support: pick one \u201cwith emoji\u201d, "
-                       "or run the installer again to add it")
+            else:
+                why = insert.why_not_active() or why
             self._copy(char, reason=why)
             return
         self.mode = "inserting"
@@ -563,7 +562,18 @@ class PickerWindow(Adw.ApplicationWindow):
     def _quit(self):
         self._on_close_request()
         app = self.get_application()
-        GLib.timeout_add(300 if self.mode == "copied" else 0, lambda: (app.quit(), False)[1])
+
+        def done():
+            # the shortcut was pressed again while this one was finishing:
+            # open a fresh picker now instead of swallowing that press
+            if getattr(self, "reopen_requested", False) and self.options.get("reopen"):
+                self.options["reopen"]()
+                self.destroy()
+            else:
+                app.quit()
+            return False
+
+        GLib.timeout_add(300 if self.mode == "copied" else 0, done)
 
 
 def has_selection(entry):

@@ -55,6 +55,19 @@ class SourcesTest(unittest.TestCase):
         # nothing known yet: the prototype engine stays, so typing still inserts
         self.assertEqual(s.convert(src, known=set()), src)
 
+    def test_prototype_engine_becomes_its_layout(self):
+        self.assertEqual(s.convert([("ibus", "emoji-picker")], proto_id="de"),
+                         [("ibus", "emoji-picker:de")])
+        self.assertEqual(s.convert([("ibus", "emoji-picker"), ("xkb", "de")], proto_id="de"),
+                         [("ibus", "emoji-picker:de")])
+        xml = "<engine><name>emoji-picker</name><layout>us</layout></engine>"
+        self.assertEqual(s.prototype_layout(xml), "us")
+        self.assertIsNone(s.prototype_layout("<engine><name>emoji-picker:us</name></engine>"))
+
+    def test_exact_engine_names_not_prefixes(self):
+        listing = "  emoji-picker:de+nodeadkeys - x\n"
+        self.assertEqual(s.convert([("xkb", "de")], known=s.listed_engines(listing)), [("xkb", "de")])
+
     def test_registry_union(self):
         with tempfile.TemporaryDirectory() as d:
             with open(os.path.join(d, "1000"), "w") as f:

@@ -58,9 +58,9 @@ Pull (or clone) a newer version and run `./install.sh` again. The new version
 is installed beside the old one and switched to in one step, so a failed
 upgrade leaves the old one working.
 
-If you add a keyboard layout in Settings later, run `./install.sh` again
-from a clone to give it emoji too; until then the picker copies while that
-layout is active.
+If you add a keyboard layout in Settings later, run `emoji-picker --setup`
+to give it emoji too (no clone needed); until then the picker copies while
+that layout is active.
 
 ## Uninstall
 
@@ -92,6 +92,9 @@ then log out and back in once. Your emoji history and settings stay in
   emoji for you to paste instead of typing it.
 - **No plain keyboard layout.** If your input sources contain no keyboard
   layout at all, there is nothing to add emoji to, and the picker copies.
+- **Before IBus is up** (the first moments after login) **or if it stops**,
+  GNOME types with the US layout until IBus is back, because your layouts
+  are now IBus keyboards. With a US layout this changes nothing.
 - **English search only.**
 - **GNOME only**, tested on Ubuntu 26.04 (GNOME 50, Wayland).
 

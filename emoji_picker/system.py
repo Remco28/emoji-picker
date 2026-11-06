@@ -10,10 +10,12 @@ changed later) is kept.
     system.py component VERSION EXEC REGISTRY_DIR
         -> IBus component XML with an engine for every layout listed in the
            registry files (one per user who installed it)
-    system.py convert "<sources>" ["<ibus list-engine output>"]
-        -> sources using our engines (only engines IBus lists, if given)
+    system.py convert "<sources>" [--known "<ibus list-engine output>"] [--proto ID]
+        -> sources using our engines (only engines IBus lists, with --known;
+           the prototype's engine becomes ours for layout ID, with --proto)
+    system.py prototype-layout COMPONENT_XML -> the prototype engine's layout, or ""
     system.py restore "<sources>"   -> sources back to plain xkb
-    system.py missing "<sources>" "<ibus list-engine output>"
+    system.py missing "<sources>" "<ibus list-engine output>" [--proto ID]
         -> our engines the converted sources need that IBus does not list yet
     system.py has "<list>" KEY            -> exit status 0 when KEY is in the list
     system.py hotkey-remove "<list>" KEY  -> list without KEY
@@ -75,29 +77,46 @@ def xkb_ids(sources):
     return out
 
 
-def convert(sources, known=None):
-    """Each ('xkb', ID) becomes our engine for ID, in place, and the
-    prototype's engine is dropped. With `known` (engine names IBus lists),
-    only layouts whose engine IBus knows are converted, and the prototype's
-    engine is dropped only once one of ours replaces it. Anything else is
-    kept as it is."""
-    out = []
+def convert(sources, known=None, proto_id=None):
+    """Each ('xkb', ID) becomes our engine for ID, in place.
+
+    The prototype's single engine becomes our engine for `proto_id` (the
+    layout it typed with), or is dropped when another of ours replaces it.
+    With `known` (engine names IBus lists) only engines IBus knows are
+    used, so a source is never swapped for one GNOME would skip. Anything
+    else is kept as it is."""
     items = [tuple(s) for s in sources]
-    ours = [engine_name(n) for k, n in items if k == "xkb"]
-    if known is not None:
-        ours = [e for e in ours if e in known]
+
+    def usable(engine):
+        return known is None or engine in known
+
+    proto_engine = engine_name(proto_id) if proto_id and usable(engine_name(proto_id)) else None
+    replaced = any(k == "xkb" and usable(engine_name(n)) for k, n in items) or proto_engine
+    out = []
     for kind, name in items:
         if (kind, name) == PROTOTYPE:
-            if known is None or ours:
+            if proto_engine:
+                item = ("ibus", proto_engine)
+            elif replaced:
                 continue
-            item = (kind, name)
-        elif kind == "xkb" and engine_name(name) in ours:
+            else:
+                item = (kind, name)   # keep the only engine that works until ours load
+        elif kind == "xkb" and usable(engine_name(name)):
             item = ("ibus", engine_name(name))
         else:
             item = (kind, name)
         if item not in out:
             out.append(item)
     return out
+
+
+def prototype_layout(xml_text):
+    """The layout id the prototype's engine typed with, from its component."""
+    m = re.search(r"<name>emoji-picker</name>.*?<layout>([^<]+)</layout>"
+                  r"(?:\s*<layout_variant>([^<]+)</layout_variant>)?", xml_text, re.S)
+    if not m:
+        return None
+    return m.group(1) + (f"+{m.group(2)}" if m.group(2) else "")
 
 
 def restore(sources):
@@ -165,27 +184,35 @@ def with_first(items, key):
 # ---- the IBus component ---------------------------------------------------
 
 def layout_info(xkb_id):
-    """(language, symbol, longname) for a layout, as GNOME would name it."""
-    layout, _, variant = xkb_id.partition("+")
-    language, symbol, display = "other", layout[:3], xkb_id
+    """(language, symbol, longname) for a layout, so GNOME's menu entry,
+    "<language name> (<longname>)", reads like the plain layout's name.
+
+    "English (US)" -> eng, "US, with emoji". When the display name does not
+    start with a language name ("Belgian"), the first language is used and
+    the whole display name goes in the brackets: "French (Belgian, with emoji)".
+    """
+    language, symbol, display = "other", xkb_id.partition("+")[0][:3], xkb_id
+    langs = []
     try:
         import gi
         gi.require_version("GnomeDesktop", "4.0")
-        from gi.repository import GnomeDesktop
+        gi.require_version("IBus", "1.0")
+        from gi.repository import GnomeDesktop, IBus
         info = GnomeDesktop.XkbInfo()
-        ok, display, short, _l, _v = info.get_layout_info(xkb_id)
+        ok, name, short, _l, _v = info.get_layout_info(xkb_id)
         if ok:
-            symbol = short or symbol
-            langs = info.get_languages_for_layout(xkb_id) or []
-            if langs:
-                language = langs[0]
-        else:
-            display = xkb_id
+            display, symbol = name or xkb_id, short or symbol
+            langs = list(info.get_languages_for_layout(xkb_id) or [])
     except (ImportError, ValueError):
-        pass
-    m = re.match(r"^[^(]*\((.*)\)\s*$", display or "")
-    longname = f"{m.group(1)}, with emoji" if m else "with emoji"
-    return language, symbol, longname
+        IBus = None
+    for code in langs:
+        lname = IBus.get_language_name(code) if IBus else ""
+        if lname and (display == lname or display.startswith(lname + " (")):
+            inner = display[len(lname):].strip()[1:-1] if display != lname else ""
+            return code, symbol, f"{inner}, with emoji" if inner else "with emoji"
+    if langs:
+        language = langs[0]
+    return language, symbol, f"{display}, with emoji"
 
 
 ENGINE_XML = """    <engine>
@@ -235,22 +262,45 @@ def component(exec_path, ids, version, info=layout_info):
 
 # ---- command line ---------------------------------------------------------
 
+def _opts(args):
+    """Positional arguments, plus --known LIST_ENGINE_OUTPUT and --proto ID."""
+    pos, known, proto = [], None, None
+    i = 0
+    while i < len(args):
+        if args[i] == "--known":
+            known, i = listed_engines(args[i + 1]), i + 2
+        elif args[i] == "--proto":
+            proto, i = (args[i + 1] or None), i + 2
+        else:
+            pos.append(args[i])
+            i += 1
+    return pos, known, proto
+
+
 def main(argv):
-    cmd, args = argv[1], argv[2:]
+    cmd, (args, known, proto) = argv[1], _opts(argv[2:])
     if cmd == "engines":
-        for xid in xkb_ids(parse(args[0])):
+        ids = xkb_ids(parse(args[0]))
+        if proto and proto not in ids:
+            ids.append(proto)
+        for xid in ids:
             print(xid)
     elif cmd == "component":
         version, exec_path, registry = args
         print(component(exec_path, registry_ids(registry), version), end="")
     elif cmd == "convert":
-        known = listed_engines(args[1]) if len(args) > 1 else None
-        print(fmt_sources(convert(parse(args[0]), known)))
+        print(fmt_sources(convert(parse(args[0]), known, proto)))
     elif cmd == "restore":
         print(fmt_sources(restore(parse(args[0]))))
     elif cmd == "missing":
-        for name in missing(convert(parse(args[0])), args[1]):
+        for name in missing(convert(parse(args[0]), None, proto), args[1]):
             print(name)
+    elif cmd == "prototype-layout":
+        try:
+            with open(args[0], encoding="utf-8") as f:
+                print(prototype_layout(f.read()) or "")
+        except OSError:
+            print("")
     elif cmd == "has":
         sys.exit(0 if args[1] in parse(args[0]) else 1)
     elif cmd == "hotkey-remove":
