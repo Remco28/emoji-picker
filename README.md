@@ -78,8 +78,9 @@ then log out and back in once. Your emoji history and settings stay in
 
 | Key | Does |
 |---|---|
-| typing | narrows the chart; works for words, phrases and sentences |
+| typing | narrows the chart; works for words, phrases, sentences and category names ("food", "flags") |
 | arrows, Page Up/Down | move the highlight |
+| Ctrl+↑ / Ctrl+↓ | jump to the previous / next category or result line |
 | Enter | insert the highlighted emoji |
 | Tab | skin tones for the highlighted emoji (Tab or Esc to go back) |
 | Ctrl+C | copy instead of inserting |

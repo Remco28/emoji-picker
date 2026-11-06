@@ -58,10 +58,10 @@ scores exactly that against `tests/eval_queries.json`.
 
 | Module | Holds |
 |---|---|
-| `window.py` | the window, key handling, modes (browsing, tones, inserting, copied) |
+| `window.py` | the window: search bar, chart, pinned section title, preview card, key hints; key handling; modes (browsing, tones, inserting, copied) |
 | `nav.py` | arrow and page movement over sectioned lines; `Pointer`, which ignores a pointer that has not really moved (stops hover from stealing the keyboard highlight) |
-| `design.py` | every size, spacing and colour role, in one place |
-| `layout.py` | line width shared by the window and the search eval |
+| `design.py` | every size, spacing and colour role, in one place (text sizes are libadwaita classes) |
+| `layout.py` | columns per line at the default window, shared by the window and the search eval |
 | `fonts.py` | hides emoji newer than the installed emoji font can draw |
 | `usage.py` | recents, frecency (14-day half-life), remembered skin tones |
 
