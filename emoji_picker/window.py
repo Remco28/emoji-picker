@@ -23,8 +23,9 @@ PLACEHOLDER = "Search, or try ‘food’"
 HINTS = {
     "browse": [("Enter", "insert"), ("Ctrl+C", "copy"), ("Ctrl+↑↓", "jump"), ("Esc", "close")],
     "search": [("Enter", "insert"), ("Ctrl+C", "copy"), ("Ctrl+↑↓", "jump"), ("Esc", "clear")],
+    "search1": [("Enter", "insert"), ("Ctrl+C", "copy"), ("Esc", "clear")],  # one section: no jump
     "empty": [("Esc", "clear")],
-    "tones": [("Enter", "insert"), ("Tab or Esc", "back")],
+    "tones": [("Enter", "insert"), ("Ctrl+C", "copy"), ("Tab or Esc", "back")],
     "copied": [("Any key", "closes")],
     "closing": [],
 }
@@ -70,7 +71,7 @@ def card_text(e):
 
 def tone_text(tone):
     if tone is None:
-        return "No skin tone"
+        return "Default yellow"
     if isinstance(tone, list):
         a, b = (TONE_NAMES.get(t, "") for t in tone)
         return f"{a.capitalize()} skin tone" if a == b else f"{a.capitalize()} and {b} skin tones"
@@ -213,6 +214,10 @@ class PickerWindow(Adw.ApplicationWindow):
         body.append(chart_area)
         self.card = self._build_card()
         body.append(self.card)
+        # "No emoji found", centred over the whole body (the card is hidden then)
+        self.empty = self._build_empty()
+        body_area = Gtk.Overlay(child=body)
+        body_area.add_overlay(self.empty)
 
         self.hints = Gtk.Label(xalign=0, use_markup=True, ellipsize=3)
         self.hints.add_css_class("caption")
@@ -220,9 +225,14 @@ class PickerWindow(Adw.ApplicationWindow):
 
         view = Adw.ToolbarView()
         view.add_top_bar(header)
-        view.set_content(body)
+        view.set_content(body_area)
         view.add_bottom_bar(self.hints)
         self.set_content(view)
+        self._fix_hints_height()
+
+        # the card's first width, before the chart reports its own
+        extra = design.chart_width(self.settings.width) - self.columns * cell
+        self.card.set_size_request(design.CARD_WIDTH + max(0, extra), -1)
 
         # window-level pointer tracking runs before the cells' hover handlers
         self.pointer = Pointer()
@@ -261,8 +271,9 @@ class PickerWindow(Adw.ApplicationWindow):
         self.card_note = label("caption", "ep-muted", wrap=True)
         self.card_result = label("heading")
         self.card_result_detail = label("ep-muted", wrap=True)
-        card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=design.S1,
-                       width_request=design.CARD_WIDTH, valign=Gtk.Align.START)
+        # full height, so its edge never moves as the text under the emoji
+        # changes; long text (a copy fallback reason) scrolls inside it
+        card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, width_request=design.CARD_WIDTH)
         card.add_css_class("card")
         for m in ("top", "end", "bottom"):
             getattr(card, f"set_margin_{m}")(design.S3)
@@ -276,8 +287,32 @@ class PickerWindow(Adw.ApplicationWindow):
         for w in (self.card_emoji, self.card_name, self.card_detail, self.card_note,
                   self.card_result, self.card_result_detail):
             inner.append(w)
-        card.append(inner)
+        scroll = Gtk.ScrolledWindow(hscrollbar_policy=Gtk.PolicyType.NEVER, vexpand=True,
+                                    child=inner)
+        card.append(scroll)
         return card
+
+    def _build_empty(self):
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=design.S2,
+                      halign=Gtk.Align.CENTER, valign=Gtk.Align.CENTER,
+                      can_target=False, visible=False)
+        title = Gtk.Label(label="No emoji found")
+        title.add_css_class("title-4")
+        desc = Gtk.Label(label="Try another word, or a category like ‘food’.", wrap=True,
+                         justify=Gtk.Justification.CENTER)
+        desc.add_css_class("ep-muted")
+        box.append(title)
+        box.append(desc)
+        return box
+
+    def _fix_hints_height(self):
+        """The bar keeps one height in every state (some key glyphs come from
+        a taller fallback font)."""
+        tallest = 0
+        for state in HINTS:
+            self.hints.set_markup(hints_markup(state))
+            tallest = max(tallest, self.hints.measure(Gtk.Orientation.VERTICAL, -1)[1])
+        self.hints.set_size_request(-1, tallest)
 
     def _show_card(self, idx=None, char="", note=""):
         if idx is None:
@@ -286,6 +321,7 @@ class PickerWindow(Adw.ApplicationWindow):
             name, detail = card_text(self.index.emoji[idx])
         # with nothing highlighted the card keeps its place but is not drawn
         self.card.set_opacity(0 if idx is None else 1)
+        self.empty.set_visible(idx is None and self.mode == "pick" and bool(self.entry.get_text().strip()))
         self.card_emoji.set_label(char)
         self.card_name.set_label(name)
         self.card_detail.set_label(detail)
@@ -388,25 +424,11 @@ class PickerWindow(Adw.ApplicationWindow):
             self._build_staged(secs, self._build_token)
             self._set_hints("browse")
             return
-        if not secs:
-            self._add_empty()
         for s in secs:
             self._add_section(self._title(s), [(self._display_char(i), i) for i in s.items])
         self._finish_build(secs)
-        self._set_hints("search" if secs else "empty")
+        self._set_hints("empty" if not secs else "search" if len(secs) > 1 else "search1")
         self.last_build_ms = (time.perf_counter() - t) * 1000
-
-    def _add_empty(self):
-        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=design.S2,
-                      margin_top=design.S6 * 3)
-        title = Gtk.Label(label="No emoji found", wrap=True, max_width_chars=1)
-        title.add_css_class("title-4")
-        desc = Gtk.Label(label="Try another word, or a category like ‘food’.", wrap=True,
-                         justify=Gtk.Justification.CENTER, max_width_chars=1)
-        desc.add_css_class("ep-muted")
-        box.append(title)
-        box.append(desc)
-        self.chart.inner.append(box)
 
     def _build_staged(self, secs, token):
         """Add the browse sections: enough for the first screens now, the rest
@@ -455,22 +477,30 @@ class PickerWindow(Adw.ApplicationWindow):
         return out
 
     def _on_chart_width(self, width):
-        cols = columns(width, design.cell_width(self.settings.emoji_size))
+        # The card takes the width left over after whole cells, so the
+        # chart's right edge and the card's left edge keep one gap. Measured
+        # from the chart's real width (a classic scrollbar takes some).
+        cell = design.cell_width(self.settings.emoji_size)
+        card_now = self.card.get_size_request()[0]
+        total = width + max(0, card_now - design.CARD_WIDTH)
+        cols = columns(total, cell)
         if cols != self.columns:
             self.columns = cols
             GLib.idle_add(self._relayout)
-        # the card takes the width left over after whole cells, so the
-        # chart's right edge and the card's left edge keep one gap
-        avail = design.chart_width(self.get_width())
-        cell = design.cell_width(self.settings.emoji_size)
-        card = design.CARD_WIDTH + max(0, avail - columns(avail, cell) * cell)
-        if card != self.card.get_size_request()[0]:
-            GLib.idle_add(self.card.set_size_request, card, -1)
+        card = design.CARD_WIDTH + max(0, total - cols * cell)
+        if card != card_now:
+            GLib.idle_add(self.card.set_size_request, card, -1)  # not during allocation
 
     def _relayout(self):
+        keep = self.highlight
+        if self.mode == "pick":
+            # Recent and the search lines are cut to the line width: rebuild
+            self._show_results(self.entry.get_text())
+            if keep is not None and self.cells:
+                self._set_highlight(min(keep, len(self.cells) - 1))
+            return False
         for fb in self.flowboxes:
             fb.set_max_children_per_line(self.columns)
-        keep = self.highlight
         self.grid = Grid([len(s.items) for s in self._sections], self.columns)
         self._set_highlight(keep)
         return False
@@ -481,12 +511,17 @@ class PickerWindow(Adw.ApplicationWindow):
         ok, rect = label.compute_bounds(self.chart)
         return rect.origin.y if ok else None
 
+    def _pinned_height(self):
+        # follows the title's real line height (Large Text makes it taller)
+        return self.pinned.get_height() or design.PINNED_HEIGHT
+
     def _update_pinned(self, *_a):
         value = self.scroller.get_vadjustment().get_value()
         title = None
         for label in self.section_labels:
             y = self._label_y(label)
-            if y is None or (title is not None and y > value + 1):
+            # a title takes over as soon as it slides under the pinned one
+            if y is None or (title is not None and y >= value + self._pinned_height()):
                 break
             title = label.get_label()
         self.pinned_label.set_label(title or "")
@@ -554,8 +589,8 @@ class PickerWindow(Adw.ApplicationWindow):
         top, bottom = rect.origin.y, rect.origin.y + rect.size.height
         if k == 0:
             adj.set_value(0)
-        elif top < adj.get_value() + design.PINNED_HEIGHT:
-            adj.set_value(max(0, top - design.PINNED_HEIGHT))
+        elif top < adj.get_value() + self._pinned_height():
+            adj.set_value(max(0, top - self._pinned_height()))
         elif bottom > adj.get_value() + adj.get_page_size() - design.FADE:
             adj.set_value(bottom - adj.get_page_size() + design.FADE)
         return False

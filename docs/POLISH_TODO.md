@@ -60,3 +60,19 @@ After screenshots (`capture.sh`, same states as before, light and dark,
 default and minimum size) compared side by side with the before set; the
 unit tests; `tools/eval.py` for item 1; then a human-feedback round on
 Frank's machine (Wayland, Yaru, his scaling).
+
+## Second look (fresh reviewer on before/after screenshots)
+
+Items 1-12 delivered. Fixed after it: the card is full height so its edge
+no longer jumps as the highlight moves; "No emoji found" is centred over the
+whole window; the pinned title switches as soon as the next title slides
+under it; the card width comes from the chart's real width (a classic
+scrollbar no longer costs a column); Recent and search lines are rebuilt
+when the column count changes; the scroll maths use the pinned title's real
+height (Large Text); the hint bar keeps one height; "Ctrl+↑↓ jump" only
+shows with more than one section; Ctrl+C shown in skin tones; the default
+tone is called "Default yellow" (not "No skin tone", which collided with
+"No skin tones").
+
+Left for Frank's round: whether the card is too big at the minimum window
+(TASTE), and quoted titles starting one quote mark right of the glyphs.
