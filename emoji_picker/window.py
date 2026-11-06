@@ -24,11 +24,17 @@ def state_dir():
     return os.path.join(base, "emoji-picker")
 
 
+LOG_MAX = 1_000_000
+
+
 def log(msg):
     try:
         os.makedirs(state_dir(), exist_ok=True)
+        path = os.path.join(state_dir(), "picker.log")
+        if os.path.exists(path) and os.path.getsize(path) > LOG_MAX:
+            os.replace(path, path + ".1")
         t = time.time()
-        with open(os.path.join(state_dir(), "picker.log"), "a", encoding="utf-8") as f:
+        with open(path, "a", encoding="utf-8") as f:
             f.write(f"{time.strftime('%H:%M:%S', time.localtime(t))}.{int(t * 1000) % 1000:03d} {msg}\n")
     except OSError:
         pass
@@ -189,6 +195,8 @@ class PickerWindow(Adw.ApplicationWindow):
             fb.append(cell)
             child = fb.get_child_at_index(n)
             child.set_cursor_from_name("pointer")
+            # screen readers say the name, not the glyph's codepoints
+            child.update_property([Gtk.AccessibleProperty.LABEL], [self.index.emoji[idx]["n"]])
             self.cells.append((child, idx, char))
         self.chart.append(fb)
         self.flowboxes.append(fb)

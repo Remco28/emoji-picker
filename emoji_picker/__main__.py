@@ -6,6 +6,8 @@ T0 = time.monotonic()
 import argparse  # noqa: E402
 import sys  # noqa: E402
 
+from . import __version__  # noqa: E402
+
 APP_ID = "io.github.remco28.EmojiPicker"
 
 
@@ -14,6 +16,7 @@ def parse_args(argv):
     ap.add_argument("--query", default="", help="start with this search text")
     ap.add_argument("--print", dest="print_only", action="store_true",
                     help="print the chosen emoji instead of inserting it")
+    ap.add_argument("--version", action="version", version=f"emoji-picker {__version__}")
     # test hooks (not for everyday use)
     ap.add_argument("--screenshot", help=argparse.SUPPRESS)
     ap.add_argument("--keys", help=argparse.SUPPRESS)

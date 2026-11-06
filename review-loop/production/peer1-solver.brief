@@ -1,0 +1,22 @@
+You are an experienced Linux desktop developer (IBus, GNOME on Wayland, shell installers). You are asked to solve a problem from scratch and write the plan you would follow. Nobody has shown you anyone else's plan.
+
+Materials (all inside your working directory, <copy>):
+- PROBLEM.md: the problem, the owner's decisions (follow them; they are not up for debate), and measured facts.
+- install.sh, uninstall.sh, tools/gsettings_lists.py, engine/, emoji_picker/, bin/: the current prototype.
+
+The goal: make the prototype production ready for the owner and for anyone who clones the repo, following the owner's decisions in PROBLEM.md.
+
+Write the plan you would follow, in under 1200 words, no code:
+1. Where files go and how install, upgrade (from the prototype, and later releases) and uninstall work, step by step, including what the user sees.
+2. How you meet decision 4 (no indicator just because of this tool), including users with another layout, several layouts, or another input method.
+3. How Super+. is taken over and given back.
+4. The three riskiest parts, and how you would find out early whether each works.
+5. What you would test, and how, given the developer machine is Ubuntu 24.04 on X11 and cannot run the owner's Wayland session.
+
+For each claim about how IBus or GNOME behaves, say whether you know it or believe it.
+
+Do not pad. A short plan that is right beats a long one.
+
+Known quirks: the measured facts in PROBLEM.md are real; build on them. You have no network access.
+
+Print your report as your reply; write no report file. Keep any command under two minutes. Say each finding as soon as you have it, not only at the end. If something fails or time runs short, report what you have and what you could not check.

@@ -1,0 +1,22 @@
+You are a senior Linux desktop engineer who has shipped IBus input methods and GNOME apps on Ubuntu, and who has written installers that thousands of strangers ran. You have been asked to break a plan before anyone builds it. Nitpicking is not your job; finding what would hurt a user, or make the build fail, is.
+
+Materials (all inside your working directory, <copy>):
+- plan/PLAN.md: the plan under review.
+- plan/PROBLEM.md: the problem, the owner's decisions (not up for debate), and measured facts.
+- install.sh, uninstall.sh, tools/gsettings_lists.py, engine/, emoji_picker/, bin/: the current prototype the plan changes.
+
+The plan's goal (quoted from PROBLEM.md): the owner "plus anyone who clones the GitHub repo and runs the installer" can install, upgrade and uninstall it; "The picker takes over Super+."; the keyboard indicator "should not appear just because of this tool".
+
+Questions:
+1. Built as written, where does it fail or hurt a user? Give the concrete setup and sequence (for example: a German layout, two layouts, an existing Japanese input method, a second user, a re-run, an upgrade from the prototype, an uninstall after the user changed settings, a login where IBus is slow).
+2. Which design decisions are wrong or will not work as described on Ubuntu 26.04 / GNOME 50 Wayland / IBus 1.5.34 (IBus components and engine attributes, GNOME input sources, custom keybindings vs IBus hotkeys, autostart, /usr/local, sudo steps)? Rate each HIGH (a user loses their keyboard, shortcut or settings, or it does not work), MEDIUM (works but noticeably worse, or costly to change later), LOW (minor).
+3. Can anything leave the user's system worse than before they installed, with no clear way back?
+4. What would you cut without losing the goal?
+
+For each claim about how IBus, GNOME or a library behaves, say whether you know it or believe it.
+
+Do not hunt for problems to fill space. 'Nothing wrong' is a real and useful answer.
+
+Known quirks: the plan is not built yet; the code is the prototype it starts from. The facts in PROBLEM.md were measured; you may challenge an inference drawn from them but not the measurements. You have no network access.
+
+Print your report as your reply; write no report file. Keep any command under two minutes. Say each finding as soon as you have it, not only at the end. If something fails or time runs short, report what you have and what you could not check.

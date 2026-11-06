@@ -1,0 +1,93 @@
+import unittest
+
+from emoji_picker import system as s
+
+INFO = {"us": ("eng", "en", "US, with emoji"), "de+nodeadkeys": ("deu", "de", "no dead keys, with emoji")}
+
+
+def info(xid):
+    return INFO.get(xid, ("other", xid[:3], "with emoji"))
+
+
+class SourcesTest(unittest.TestCase):
+    def test_one_layout_becomes_one_source(self):
+        self.assertEqual(s.convert([("xkb", "us")]), [("ibus", "emoji-picker:us")])
+
+    def test_order_and_other_engines_kept(self):
+        src = [("xkb", "de+nodeadkeys"), ("ibus", "mozc-jp"), ("xkb", "us")]
+        self.assertEqual(s.convert(src), [("ibus", "emoji-picker:de+nodeadkeys"),
+                                          ("ibus", "mozc-jp"), ("ibus", "emoji-picker:us")])
+
+    def test_prototype_upgrade(self):
+        self.assertEqual(s.convert([("ibus", "emoji-picker"), ("xkb", "us")]),
+                         [("ibus", "emoji-picker:us")])
+
+    def test_convert_is_idempotent(self):
+        once = s.convert([("xkb", "us"), ("ibus", "mozc-jp")])
+        self.assertEqual(s.convert(once), once)
+
+    def test_restore_round_trip(self):
+        for src in ([("xkb", "us")], [("xkb", "de+nodeadkeys"), ("ibus", "mozc-jp"), ("xkb", "us")]):
+            self.assertEqual(s.restore(s.convert(src)), src)
+
+    def test_restore_prototype_and_empty(self):
+        self.assertEqual(s.restore([("ibus", "emoji-picker"), ("xkb", "us")]), [("xkb", "us")])
+        self.assertEqual(s.restore([("ibus", "emoji-picker")]), [("xkb", "us")])
+        self.assertEqual(s.restore([]), [("xkb", "us")])
+
+    def test_duplicates_collapse(self):
+        self.assertEqual(s.convert([("xkb", "us"), ("ibus", "emoji-picker:us")]),
+                         [("ibus", "emoji-picker:us")])
+
+    def test_gsettings_text_round_trip(self):
+        text = "[('xkb', 'us'), ('ibus', 'mozc-jp')]"
+        self.assertEqual(s.fmt_sources(s.parse(text)), text)
+        self.assertEqual(s.parse("@a(ss) []"), [])
+        self.assertEqual(s.fmt_sources([]), "@a(ss) []")
+
+    def test_missing_engines(self):
+        listing = "language: English\n  xkb:us::eng - English (US)\n  emoji-picker:us - US, with emoji\n"
+        self.assertEqual(s.missing([("ibus", "emoji-picker:us")], listing), [])
+        self.assertEqual(s.missing([("ibus", "emoji-picker:us"), ("ibus", "emoji-picker:de")], listing),
+                         ["emoji-picker:de"])
+
+
+class HotkeyTest(unittest.TestCase):
+    def test_remove_only_ours(self):
+        self.assertEqual(s.without(["<Super>period", "<Super>semicolon"], "<Super>period"),
+                         ["<Super>semicolon"])
+
+    def test_restore_keeps_user_changes(self):
+        self.assertEqual(s.with_first(["<Super>semicolon", "<Alt>e"], "<Super>period"),
+                         ["<Super>period", "<Super>semicolon", "<Alt>e"])
+        self.assertEqual(s.with_first(["<Super>period"], "<Super>period"), ["<Super>period"])
+
+    def test_string_list_format(self):
+        self.assertEqual(s.fmt_strings([]), "@as []")
+        self.assertEqual(s.parse(s.fmt_strings(["<Super>period"])), ["<Super>period"])
+
+
+class ComponentTest(unittest.TestCase):
+    def test_engines_names_and_variant(self):
+        xml = s.component("/opt/x/engine.py", ["us", "de+nodeadkeys"], "1.0.0", info=info)
+        self.assertIn("<name>emoji-picker:us</name>", xml)
+        self.assertIn("<language>eng</language>", xml)
+        self.assertIn("<symbol>en</symbol>", xml)
+        self.assertIn("<layout_variant>nodeadkeys</layout_variant>", xml)
+        self.assertEqual(xml.count("<layout_variant>"), 1)  # never an empty one
+        self.assertIn("<exec>/opt/x/engine.py --ibus</exec>", xml)
+
+    def test_installed_engines_are_read_back(self):
+        xml = s.component("/e", ["us", "de+nodeadkeys"], "1.0.0", info=info)
+        self.assertEqual(s.installed_ids(xml), ["us", "de+nodeadkeys"])
+        self.assertEqual(s.installed_ids("<component><name>other</name></component>"), [])
+        self.assertEqual(s.installed_ids("not xml"), [])
+
+    def test_escaping(self):
+        xml = s.component("/a&b/engine.py", ["us"], "1.0.0", info=lambda x: ("eng", "en", "A<B"))
+        self.assertIn("/a&amp;b/engine.py", xml)
+        self.assertIn("A&lt;B", xml)
+
+
+if __name__ == "__main__":
+    unittest.main()

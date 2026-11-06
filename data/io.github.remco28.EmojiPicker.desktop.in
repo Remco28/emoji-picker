@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Emoji Picker
+Comment=Find an emoji by name or meaning and insert it
+Exec=@BIN@
+Icon=io.github.remco28.EmojiPicker
+Terminal=false
+Categories=Utility;
+Keywords=emoji;emoticon;smiley;symbol;
+StartupNotify=true
+StartupWMClass=io.github.remco28.EmojiPicker
