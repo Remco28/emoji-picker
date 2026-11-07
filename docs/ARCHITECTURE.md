@@ -87,7 +87,13 @@ it and do the side effects.
   (recorded in `~/.local/state/emoji-picker/installed.json`), and a custom
   GNOME shortcut runs `/usr/local/bin/emoji-picker`.
 - **Uninstall** reverses each step, touching only entries that are still
-  ours.
+  ours. A setting whose restored value is its default is reset, not set
+  (`system.py is-default`), so no copy of a default is left pinned. Folders
+  the installer created are listed in `created-dirs` (`$LIB/` for system
+  folders, the state folder for the user's) and removed once empty. The cache
+  always goes; history, settings and the backup go with `--purge`. A fresh
+  install after an uninstall backs up the settings of then, keeping the old
+  backup as `backup-until-<time>`.
 
 ## Where things live on a user's machine
 
@@ -107,7 +113,9 @@ it and do the side effects.
 
 - `test_system.py`: source conversion, restore, registry, hotkey, component.
 - `test_installer.py`: real `install.sh` / `uninstall.sh` runs against a
-  keyfile gsettings backend, a temporary `--root` and a stub `ibus`.
+  keyfile gsettings backend, a temporary `--root` and a stub `ibus`. The
+  "no trace" tests snapshot every file and setting before the install and
+  compare after the uninstall.
 - `test_insert_ibus.py`: a private `ibus-daemon` with the real engine,
   committing into a test client (skipped without IBus).
 - `test_search.py`, `test_nav.py`, `test_usage.py`, `test_data.py`.

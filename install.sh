@@ -55,6 +55,23 @@ run() {  # run a command, or only print it in dry-run mode
   if [ "$DRY" = 1 ]; then printf '   would run: %s\n' "$*"; else "$@"; fi
 }
 sys() { "$PY" -I "$SYSTEM" "$@"; }
+put() {  # set a key; reset it instead when the value is its default
+  if sys is-default "$1" "$2" "$3"; then run gsettings reset "$1" "$2"
+  else run gsettings set "$1" "$2" "$3"; fi
+}
+mkdirs() {  # mkdirs LEDGER [--sudo] DIR...: mkdir -p, listing in LEDGER each
+            # folder that did not exist, so uninstall can remove it once empty
+  local ledger=$1 as=() new=() d p; shift
+  if [ "${1-}" = --sudo ]; then as=("${SUDO[@]}"); shift; fi
+  for d in "$@"; do
+    p=$d
+    while [ ! -e "$p" ]; do new+=("$p"); p=$(dirname "$p"); done
+  done
+  "${as[@]}" mkdir -p -- "$@"
+  if [ ${#new[@]} -gt 0 ]; then
+    printf '%s\n' "${new[@]}" | "${as[@]}" tee -a "$ledger" >/dev/null
+  fi
+}
 
 # ---- checks, before anything changes -----------------------------------
 for cmd in gsettings ibus; do
@@ -104,7 +121,13 @@ step "1. Back up your current settings (first install only)"
 if [ "$DRY" = 1 ]; then
   say "would save your input sources, shortcut list and IBus emoji hotkey to $BACKUP"
 else
-  mkdir -p "$BACKUP"
+  if [ ! -f "$STATE/installed.json" ] && [ -d "$BACKUP" ]; then
+    # a fresh install after an uninstall: back up the settings as they are now
+    OLD="$BACKUP-until-$(date +%Y%m%d%H%M%S)"
+    mv -T -- "$BACKUP" "$OLD"
+    say "an earlier install's backup is kept as $OLD"
+  fi
+  mkdirs "$STATE/created-dirs" "$BACKUP"
   save() { [ -f "$BACKUP/$1" ] || gsettings get "$2" "$3" > "$BACKUP/$1"; }
   save input-sources.txt $SRC_SCHEMA sources
   save mru-sources.txt $SRC_SCHEMA mru-sources
@@ -125,7 +148,8 @@ if [ "$DRY" = 1 ]; then
   say "would write $BIN/emoji-picker, $BIN/emoji-picker-uninstall, the app entry and icon"
 else
   # stage everything in a new directory; the switch to it is one rename
-  "${SUDO[@]}" mkdir -p "$LIB/versions" "$LIB/users"
+  mkdirs "$LIB/created-dirs" --sudo "$LIB/versions" "$LIB/users" "$BIN" "$APPS" "$ICONS" \
+    "$(dirname "$COMPONENT")"
   "${SUDO[@]}" rm -rf -- "${DEST:?}.tmp"
   "${SUDO[@]}" mkdir -p "$DEST.tmp"
   tar -C "$HERE" --exclude=__pycache__ -cf - emoji_picker engine/engine.py install.sh uninstall.sh \
@@ -193,7 +217,7 @@ if [ "$SHORTCUT" = "$SUPER_DOT" ]; then
     REMOVED=1
   fi
 elif [ "$REMOVED" = 1 ]; then
-  run gsettings set $HOTKEY_SCHEMA hotkey "$(sys hotkey-restore "$HOTKEY" "$SUPER_DOT")"
+  put $HOTKEY_SCHEMA hotkey "$(sys hotkey-restore "$HOTKEY" "$SUPER_DOT")"
   say "gave Super+. back to IBus's emoji picker"
   REMOVED=0
 fi
@@ -243,7 +267,7 @@ else
     if [ "$DRY" = 1 ]; then
       say "would add a one-time login step: $AUTOSTART"
     else
-      mkdir -p "$(dirname "$AUTOSTART")"
+      mkdirs "$STATE/created-dirs" "$(dirname "$AUTOSTART")"
       cat > "$AUTOSTART" <<EOF
 [Desktop Entry]
 Type=Application

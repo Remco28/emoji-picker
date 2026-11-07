@@ -21,6 +21,10 @@ changed later) is kept.
     system.py hotkey-remove "<list>" KEY  -> list without KEY
     system.py hotkey-restore "<list>" KEY -> list with KEY first
     system.py add-path "<paths>" PATH / remove-path "<paths>" PATH
+    system.py is-default SCHEMA KEY "<value>"
+        -> exit status 0 when the value is the key's default, so the caller
+           resets the key instead of writing the default down as the user's
+           own value (which would hide later changes to the default)
 
 It is run as a plain script with `python3 -I` (no package imports), so the
 installer can use it from a clone and uninstall from the installed copy.
@@ -272,6 +276,18 @@ def component(exec_path, ids, version, info=layout_info):
                                 engines="".join(parts))
 
 
+def is_default(schema, key, text):
+    """True when TEXT (gsettings format) equals the key's default value."""
+    from gi.repository import Gio, GLib   # here only: the rest needs no GObject
+    settings = Gio.Settings.new(schema)
+    default = settings.get_default_value(key)
+    try:
+        value = GLib.Variant.parse(default.get_type(), text, None, None)
+    except GLib.Error:
+        return False
+    return value.equal(default)
+
+
 # ---- command line ---------------------------------------------------------
 
 def _opts(args):
@@ -323,6 +339,8 @@ def main(argv):
         print(fmt_strings(without(parse(args[0]), args[1]) + [args[1]]))
     elif cmd == "remove-path":
         print(fmt_strings(without(parse(args[0]), args[1])))
+    elif cmd == "is-default":
+        sys.exit(0 if is_default(*args) else 1)
     else:
         raise SystemExit(f"unknown command {cmd}")
 

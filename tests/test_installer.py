@@ -43,9 +43,13 @@ case "$1" in
 esac
 """)
         os.chmod(os.path.join(fake, "ibus"), 0o755)
-        self.env = dict(os.environ, GSETTINGS_BACKEND="keyfile",
+        for d in ("home", "config", "state", "cache"):   # a home folder always has these
+            os.makedirs(os.path.join(self.tmp, d))
+        self.env = dict(os.environ, GSETTINGS_BACKEND="keyfile", HOME=os.path.join(self.tmp, "home"),
                         XDG_CONFIG_HOME=os.path.join(self.tmp, "config"),
                         XDG_STATE_HOME=os.path.join(self.tmp, "state"),
+                        XDG_CACHE_HOME=os.path.join(self.tmp, "cache"),
+                        MESA_SHADER_CACHE_DISABLE="true",   # the graphics driver's cache, not ours
                         PATH=f"{fake}:{os.environ['PATH']}")
         self.lib = os.path.join(self.root, "usr/local/lib/emoji-picker")
         self.bin = os.path.join(self.root, "usr/local/bin")
@@ -78,8 +82,36 @@ esac
     def install(self, *extra, ok=True):
         return self.run_script([os.path.join(ROOT_DIR, "install.sh"), "--root", self.root, *extra], ok)
 
-    def uninstall(self):
-        return self.run_script([os.path.join(self.bin, "emoji-picker-uninstall"), "--root", self.root])
+    def uninstall(self, *extra):
+        return self.run_script([os.path.join(self.bin, "emoji-picker-uninstall"), "--root", self.root, *extra])
+
+    def snapshot(self):
+        """Every file and folder of this test's computer, and every setting
+        (an empty [group] is only how the keyfile backend shows a reset)."""
+        keyfile = os.path.join(self.tmp, "config/glib-2.0/settings/keyfile")
+        files = set()
+        for dp, dns, fns in os.walk(self.tmp):
+            for n in dns + fns:
+                p = os.path.join(dp, n)
+                if p not in (keyfile, self.engines_file) and "/fakebin" not in p:
+                    files.add(os.path.relpath(p, self.tmp))
+        settings, group = {}, None
+        if os.path.exists(keyfile):
+            with open(keyfile) as f:
+                for line in f.read().splitlines():
+                    if line.startswith("["):
+                        group = line
+                    elif "=" in line:
+                        settings[(group, line.split("=", 1)[0])] = line.split("=", 1)[1]
+        return files, settings
+
+    def use_the_app(self):
+        """What a day of use leaves: history, a log, the font cache."""
+        for path in ("state/emoji-picker/usage.json", "state/emoji-picker/picker.log",
+                     "cache/emoji-picker/font-version.json"):
+            os.makedirs(os.path.dirname(os.path.join(self.tmp, path)), exist_ok=True)
+            with open(os.path.join(self.tmp, path), "w") as f:
+                f.write("{}")
 
     def finish(self):
         return self.run_script([os.path.join(self.bin, "emoji-picker"), "--finish-setup"])
@@ -122,6 +154,65 @@ esac
         self.assertFalse(os.path.exists(self.lib))
         self.assertFalse(os.path.exists(self.component))
         self.assertFalse(os.path.exists(os.path.join(self.bin, "emoji-picker")))
+
+    def install_use_uninstall(self, *extra):
+        self.install()
+        self.ibus_lists("xkb:us::eng", "emoji-picker:us")
+        self.finish()
+        self.use_the_app()
+        return self.uninstall(*extra)
+
+    def test_uninstall_leaves_no_trace_but_your_history(self):
+        self.set(SRC, "sources", "[('xkb', 'us')]")
+        files, settings = self.snapshot()
+        self.install_use_uninstall()
+        files_after, settings_after = self.snapshot()
+        # no default is written down as the user's own value; no empty folder is left
+        self.assertEqual(settings_after, settings)
+        kept = files_after - files
+        self.assertTrue(kept, "history should be kept")
+        self.assertTrue(all(p.startswith("state") for p in kept), sorted(kept))
+        self.assertFalse(files - files_after)
+        self.assertNotIn("state/emoji-picker/created-dirs", kept)
+
+    def test_purge_leaves_no_trace_at_all(self):
+        self.set(SRC, "sources", "[('xkb', 'us')]")
+        before = self.snapshot()
+        self.install_use_uninstall("--purge")
+        self.assertEqual(self.snapshot(), before)
+
+    def test_uninstall_keeps_folders_that_were_there_before(self):
+        self.set(SRC, "sources", "[('xkb', 'us')]")
+        for d in ("root/usr/local/share/applications", "config/autostart", "root/usr/share/ibus/component"):
+            os.makedirs(os.path.join(self.tmp, d))
+        before = self.snapshot()
+        self.install_use_uninstall("--purge")
+        self.assertEqual(self.snapshot(), before)
+
+    def test_uninstall_twice_and_dry_run_change_nothing(self):
+        self.set(SRC, "sources", "[('xkb', 'us')]")
+        self.install()
+        before = self.snapshot()
+        self.uninstall("--dry-run")
+        self.assertEqual(self.snapshot(), before)
+        self.uninstall()
+        after = self.snapshot()
+        self.run_script([os.path.join(ROOT_DIR, "uninstall.sh"), "--root", self.root])
+        self.assertEqual(self.snapshot(), after)
+
+    def test_a_later_install_backs_up_the_settings_of_then(self):
+        self.set(SRC, "sources", "[('xkb', 'us')]")
+        self.install()
+        self.uninstall()
+        self.set(SRC, "sources", "[('xkb', 'de')]")
+        self.install()
+        state = os.path.join(self.tmp, "state/emoji-picker")
+        with open(os.path.join(state, "backup/input-sources.txt")) as f:
+            self.assertEqual(f.read().strip(), "[('xkb', 'de')]")
+        old = [d for d in os.listdir(state) if d.startswith("backup-until-")]
+        self.assertEqual(len(old), 1)
+        with open(os.path.join(state, old[0], "input-sources.txt")) as f:
+            self.assertEqual(f.read().strip(), "[('xkb', 'us')]")
 
     def test_finish_setup_waits_and_leaves_sources_when_ibus_never_lists(self):
         self.set(SRC, "sources", "[('xkb', 'de'), ('ibus', 'mozc-jp')]")
@@ -206,7 +297,7 @@ esac
         with open(keyfile) as f:
             self.assertEqual(f.read(), before)
         self.assertFalse(os.path.exists(self.root))
-        self.assertFalse(os.path.exists(os.path.join(self.tmp, "state")))
+        self.assertFalse(os.path.exists(os.path.join(self.tmp, "state/emoji-picker")))
 
     def test_other_shortcut_leaves_ibus_hotkey_alone(self):
         self.set(SRC, "sources", "[('xkb', 'us')]")

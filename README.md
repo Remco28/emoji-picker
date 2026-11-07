@@ -50,6 +50,7 @@ To use another key than Super+.: `./install.sh --shortcut '<Control><Alt>e'`.
 | Your input sources: each keyboard layout becomes the same layout "with emoji" (other input methods are kept). A layout other than plain US also keeps the plain layout, last, as a backup (see Limits) | each goes back to the plain layout |
 | A custom shortcut "Emoji Picker" on Super+. | removed, unless you pointed it at something else |
 | IBus's own emoji picker lets go of Super+. (keeps Super+;) | Super+. given back |
+| Folders it had to create (such as `/usr/local/share/applications`) | removed once empty |
 
 Your original settings are backed up first, to
 `~/.local/state/emoji-picker/backup/`. The installer never runs `ibus restart`.
@@ -71,8 +72,15 @@ emoji-picker-uninstall --dry-run   # see every step first
 emoji-picker-uninstall
 ```
 
-then log out and back in once. Your emoji history and settings stay in
-`~/.local/state/emoji-picker`; delete that folder if you want them gone.
+then log out and back in once. Your computer is left as it was before the
+install: a setting that goes back to its default is reset (not written down
+as your own choice), and anything you changed yourself since is kept. Your
+emoji history, picker settings and the backup of your original settings stay
+in `~/.local/state/emoji-picker`; to remove those too:
+
+```
+emoji-picker-uninstall --purge
+```
 
 ## Keys
 
