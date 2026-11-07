@@ -151,15 +151,21 @@ else
   done
   if [ -d "$LIB" ]; then run "${SUDO[@]}" rm -rf -- "${LIB:?}"; fi
   rmdirs "$CREATED" "${SUDO[@]}"
-  [ "$DRY" = 0 ] || say "would remove the folders the installer created, once empty"
   rm -f -- "$CREATED"
+  if [ "$DRY" = 1 ]; then
+    say "would also remove the folders the installer created, once empty"
+  else
+    say "removed the app, the input engine, the app entry and icon, and any folder the"
+    say "installer had to create (if still empty)"
+  fi
 fi
 if [ -z "$ROOT" ]; then run ibus write-cache 2>/dev/null || true; fi
 
 step "6. Your own files"
 CREATED=$(mktemp)
 cp "$STATE/created-dirs" "$CREATED" 2>/dev/null || true
-if [ -d "$CACHE" ]; then run rm -rf -- "${CACHE:?}"; say "removed the cache, $CACHE"; fi
+if [ -d "$CACHE" ]; then run rm -rf -- "${CACHE:?}"; say "removed the cache, $CACHE"
+else say "no cache to remove"; fi
 if [ "$PURGE" = 1 ]; then
   if [ -d "$STATE" ]; then run rm -rf -- "${STATE:?}"; fi
   say "deleted your history, settings, logs and settings backup"
